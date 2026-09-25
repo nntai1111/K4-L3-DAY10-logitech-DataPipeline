@@ -1,0 +1,458 @@
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_table_columns_to_match_set",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column_set": [
+            "paper_id",
+            "title",
+            "summary",
+            "authors",
+            "categories",
+            "primary_category",
+            "published",
+            "updated",
+            "age_days",
+            "abs_url",
+            "pdf_url",
+            "comment",
+            "authors_joined",
+            "categories_joined",
+            "summary_chars",
+            "text_for_embedding"
+          ],
+          "exact_match": false
+        },
+        "meta": {
+          "check_id": "schema_columns"
+        },
+        "id": "cc518790-5614-408c-9c5a-0da2ec1d86e2",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": [
+          "abs_url",
+          "age_days",
+          "authors",
+          "authors_joined",
+          "categories",
+          "categories_joined",
+          "comment",
+          "paper_id",
+          "pdf_url",
+          "primary_category",
+          "published",
+          "summary",
+          "summary_chars",
+          "text_for_embedding",
+          "title",
+          "updated"
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_table_row_count_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "min_value": 5,
+          "max_value": 5000
+        },
+        "meta": {
+          "check_id": "row_count"
+        },
+        "id": "f7509247-d624-4575-bdf7-d2af5f25e791",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": 24
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id"
+        },
+        "meta": {
+          "check_id": "paper_id_not_null"
+        },
+        "id": "05ae7252-8480-45c7-987e-006460cf4910",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_be_unique",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id"
+        },
+        "meta": {
+          "check_id": "paper_id_unique"
+        },
+        "id": "12b6c89b-1a48-4b9a-a1dc-022114881262",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id",
+          "regex": "^10\\.\\d{4,9}/\\S+$"
+        },
+        "meta": {
+          "check_id": "paper_id_is_doi"
+        },
+        "id": "98a984b3-6288-48d6-ae41-55929532764a",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_distinct_values_to_contain_set",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id",
+          "value_set": [
+            "10.1145/3637528.3671801",
+            "10.1145/3637528.3671802",
+            "10.1145/3637528.3671803",
+            "10.1145/3637528.3671804",
+            "10.1145/3637528.3671805",
+            "10.1145/3637528.3671806",
+            "10.1145/3637528.3671807",
+            "10.1145/3637528.3671808",
+            "10.1145/3637528.3671809",
+            "10.1145/3637528.3671810",
+            "10.1145/3637528.3671811",
+            "10.1145/3637528.3671812",
+            "10.1145/3637528.3671813",
+            "10.1145/3637528.3671814",
+            "10.1145/3637528.3671815",
+            "10.1145/3637528.3671816",
+            "10.1145/3637528.3671817",
+            "10.1145/3637528.3671818",
+            "10.1145/3637528.3671819",
+            "10.1145/3637528.3671820",
+            "10.1145/3637528.3671821",
+            "10.1145/3637528.3671822",
+            "10.1145/3637528.3671823",
+            "10.1145/3637528.3671824"
+          ]
+        },
+        "meta": {
+          "check_id": "source_papers_present"
+        },
+        "id": "d36a8f17-cd7d-429f-b00e-daebdaa5f589",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": null,
+        "missing_count": 0,
+        "partial_missing_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "title"
+        },
+        "meta": {
+          "check_id": "title_not_null"
+        },
+        "id": "f79181d3-f2a9-4c23-a0af-7f61dcdc4897",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "title",
+          "min_value": 8
+        },
+        "meta": {
+          "check_id": "title_min_length"
+        },
+        "id": "32a50a8f-afed-497d-93c1-744f62c058b9",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "text_for_embedding"
+        },
+        "meta": {
+          "check_id": "text_for_embedding_not_null"
+        },
+        "id": "e61760f2-c75d-4339-bafb-570460a9611d",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "summary",
+          "min_value": 30
+        },
+        "meta": {
+          "check_id": "summary_min_length"
+        },
+        "id": "c867c6fc-090b-44f1-9141-c2c173890c44",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "summary",
+          "regex": "[#@$%^&*~|]{2,}"
+        },
+        "meta": {
+          "check_id": "summary_no_noise"
+        },
+        "id": "2e1e525d-38c1-481c-8ea1-c39cbba3cafc",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "published",
+          "regex": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "meta": {
+          "check_id": "published_iso_date"
+        },
+        "id": "fd3c5164-346c-4065-9c07-5ff581e51d1c",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    }
+  ],
+  "suite_name": "papers_quality_repaired",
+  "suite_parameters": {},
+  "statistics": {
+    "evaluated_expectations": 12,
+    "successful_expectations": 12,
+    "unsuccessful_expectations": 0,
+    "success_percent": 100.0
+  },
+  "meta": {
+    "great_expectations_version": "1.18.0",
+    "batch_spec": {
+      "batch_data": "PandasDataFrame"
+    },
+    "batch_markers": {
+      "ge_load_time": "20260925T092509.790961Z",
+      "pandas_data_fingerprint": "1bf25c6499530d4d74737b733a82968b"
+    },
+    "active_batch_definition": {
+      "datasource_name": "papers_source",
+      "data_connector_name": "fluent",
+      "data_asset_name": "papers_asset",
+      "batch_identifiers": {
+        "dataframe": "<DATAFRAME>"
+      }
+    }
+  },
+  "id": null
+}

@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-09-25T09:24:46.349092+00:00",
+  "threshold_days": 180,
+  "max_stale_ratio": 0.25,
+  "total_rows": 24,
+  "stale_rows": 1,
+  "stale_ratio": 0.0417,
+  "latest_published": "2026-07-22",
+  "oldest_published": "2026-03-28",
+  "newest_age_days": 65,
+  "median_age_days": 110.5,
+  "oldest_age_days": 181,
+  "stale_paper_ids": [
+    "10.1145/3637528.3671805"
+  ],
+  "is_fresh": true,
+  "status": "FRESH",
+  "message": "OK: 1/24 rows (4.2%) are older than 180 days, within the 25% SLA."
+}

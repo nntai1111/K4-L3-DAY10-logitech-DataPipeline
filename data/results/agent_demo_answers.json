@@ -1,0 +1,14 @@
+[
+  {
+    "question": "What is the main finding of the paper 'Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines'?",
+    "answer": "Based on the paper *\"Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines\"* by Quang Le and Yen Vu, the main finding and contribution is that **static benchmarks fail to capture domain drift in enterprise knowledge bases**. \n\nTo address this challenge, the authors establish a **synthetic test generator** that automatically creates paired evaluation sets whenever new corpora are ingested, enabling continuous and dynamic benchmark evaluation for enterprise retrieval pipelines."
+  },
+  {
+    "question": "Who authored the paper 'Synthetic Corruption Testing: Stress-Testing Vector Search Robustness'?",
+    "answer": "The paper \"Synthetic Corruption Testing: Stress-Testing Vector Search Robustness\" was authored by **Kien Duong** and **Vy Ly**."
+  },
+  {
+    "question": "What does the indexed corpus say about protein structure prediction with AlphaFold?",
+    "answer": "Based on the indexed scholarly paper corpus, there are no indexed papers specifically discussing protein structure prediction or AlphaFold. The available papers in the corpus primarily focus on information retrieval, hybrid search architectures (combining BM25 and dense representations), continuous benchmark evaluation, and vector search robustness."
+  }
+]

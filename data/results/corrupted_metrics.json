@@ -1,0 +1,46 @@
+{
+  "samples": 10,
+  "retrieval_hit_rate": 0.8,
+  "mean_token_f1": 0.745014245014245,
+  "judge_accuracy": 0.8,
+  "mean_judge_score": 4.2,
+  "ragas": {
+    "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+  },
+  "state": "corrupted",
+  "collection": "papers-corrupted",
+  "llm": "gemini/gemini-3.5-flash-lite",
+  "evaluated_at": "2026-09-25T09:25:09.683938+00:00",
+  "by_question_type": {
+    "summary": {
+      "samples": 3,
+      "retrieval_hit_rate": 0.6667,
+      "mean_token_f1": 0.8167,
+      "judge_accuracy": 1.0
+    },
+    "authors": {
+      "samples": 3,
+      "retrieval_hit_rate": 0.6667,
+      "mean_token_f1": 0.6667,
+      "judge_accuracy": 0.6667
+    },
+    "date": {
+      "samples": 2,
+      "retrieval_hit_rate": 1.0,
+      "mean_token_f1": 0.5,
+      "judge_accuracy": 0.5
+    },
+    "categories": {
+      "samples": 2,
+      "retrieval_hit_rate": 1.0,
+      "mean_token_f1": 1.0,
+      "judge_accuracy": 1.0
+    }
+  },
+  "judge_mode": {
+    "llm": 0,
+    "llm_cached": 5,
+    "exact_match": 5,
+    "fallback_heuristic": 0
+  }
+}

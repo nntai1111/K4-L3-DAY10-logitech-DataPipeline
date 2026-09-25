@@ -1,0 +1,76 @@
+{
+  "source": "data/raw/crossref_records.json",
+  "lineage_reference": "data/raw/crossref_response.json",
+  "lineage_verified": true,
+  "rows": 24,
+  "fingerprints": {
+    "baseline_clean": "a9364c4a312d857c90e4398eb0a1dd94536f3aa51ec604b2e2452363a87ef41a",
+    "corrupted": "556b513e476978ad7374b2a3df94f83754e2cc83e2a53101549166127d91e47a",
+    "repair_run_1": "a9364c4a312d857c90e4398eb0a1dd94536f3aa51ec604b2e2452363a87ef41a",
+    "repair_run_2": "a9364c4a312d857c90e4398eb0a1dd94536f3aa51ec604b2e2452363a87ef41a"
+  },
+  "generated_at": "2026-09-25T09:25:09.904006+00:00",
+  "trigger": {
+    "gate_failed": true,
+    "failed_checks": [
+      "paper_id_unique",
+      "summary_min_length",
+      "title_min_length",
+      "summary_no_noise",
+      "source_papers_present"
+    ],
+    "freshness_status": "STALE"
+  },
+  "idempotent": true,
+  "matches_baseline": true,
+  "artifacts": [
+    [
+      "Corruption log",
+      "data/results/corruption_log.json"
+    ],
+    [
+      "Corrupted dataset",
+      "data/clean/papers_clean_corrupted.csv"
+    ],
+    [
+      "Corrupted quality report",
+      "data/quality/corrupted_quality_report.json"
+    ],
+    [
+      "Corrupted freshness",
+      "data/quality/corrupted_freshness_report.json"
+    ],
+    [
+      "Corrupted metrics",
+      "data/results/corrupted_metrics.json"
+    ],
+    [
+      "Corrupted answers",
+      "data/results/corrupted_answers.json"
+    ],
+    [
+      "Repaired dataset",
+      "data/clean/papers_clean_repaired.csv"
+    ],
+    [
+      "Repaired quality report",
+      "data/quality/repaired_quality_report.json"
+    ],
+    [
+      "Repaired freshness",
+      "data/quality/repaired_freshness_report.json"
+    ],
+    [
+      "Repaired metrics",
+      "data/results/repaired_metrics.json"
+    ],
+    [
+      "Repaired answers",
+      "data/results/repaired_answers.json"
+    ],
+    [
+      "Repair log",
+      "data/results/repair_log.json"
+    ]
+  ]
+}

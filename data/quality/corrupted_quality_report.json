@@ -1,0 +1,239 @@
+{
+  "report_name": "corrupted",
+  "engine": "great_expectations 1.18.0 (ephemeral context, pandas dataframe batch)",
+  "checked_at": "2026-09-25T09:25:08.787232+00:00",
+  "row_count": 22,
+  "unique_paper_ids": 19,
+  "success": false,
+  "required_checks_success": false,
+  "statistics": {
+    "evaluated_expectations": 12,
+    "successful_expectations": 7,
+    "unsuccessful_expectations": 5,
+    "success_percent": 58.333333333333336
+  },
+  "failed_checks": [
+    "paper_id_unique",
+    "summary_min_length",
+    "title_min_length",
+    "summary_no_noise",
+    "source_papers_present"
+  ],
+  "expectations": [
+    {
+      "check_id": "schema_columns",
+      "expectation": "expect_table_columns_to_match_set",
+      "column": null,
+      "dimension": "schema",
+      "required": false,
+      "description": "Dataset exposes every column of the clean schema",
+      "success": true,
+      "observed_value": [
+        "abs_url",
+        "age_days",
+        "authors",
+        "authors_joined",
+        "categories",
+        "categories_joined",
+        "comment",
+        "paper_id",
+        "pdf_url",
+        "primary_category",
+        "published",
+        "summary",
+        "summary_chars",
+        "text_for_embedding",
+        "title",
+        "updated"
+      ]
+    },
+    {
+      "check_id": "row_count",
+      "expectation": "expect_table_row_count_to_be_between",
+      "column": null,
+      "dimension": "volume",
+      "required": true,
+      "description": "Row count between 5 and 5000",
+      "success": true,
+      "observed_value": 22
+    },
+    {
+      "check_id": "paper_id_not_null",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "paper_id",
+      "dimension": "completeness",
+      "required": true,
+      "description": "paper_id is never null",
+      "success": true,
+      "element_count": 22,
+      "unexpected_count": 0,
+      "unexpected_percent": 0.0,
+      "unexpected_examples": []
+    },
+    {
+      "check_id": "title_not_null",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "title",
+      "dimension": "completeness",
+      "required": true,
+      "description": "title is never null",
+      "success": true,
+      "element_count": 22,
+      "unexpected_count": 0,
+      "unexpected_percent": 0.0,
+      "unexpected_examples": []
+    },
+    {
+      "check_id": "text_for_embedding_not_null",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "text_for_embedding",
+      "dimension": "completeness",
+      "required": true,
+      "description": "text_for_embedding is never null",
+      "success": true,
+      "element_count": 22,
+      "unexpected_count": 0,
+      "unexpected_percent": 0.0,
+      "unexpected_examples": []
+    },
+    {
+      "check_id": "paper_id_unique",
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "paper_id",
+      "dimension": "uniqueness",
+      "required": true,
+      "description": "paper_id is unique (no duplicate documents)",
+      "success": false,
+      "element_count": 22,
+      "unexpected_count": 6,
+      "unexpected_percent": 27.27272727272727,
+      "unexpected_examples": [
+        "10.1145/3637528.3671824",
+        "10.1145/3637528.3671821",
+        "10.1145/3637528.3671803",
+        "10.1145/3637528.3671824",
+        "10.1145/3637528.3671821"
+      ]
+    },
+    {
+      "check_id": "summary_min_length",
+      "expectation": "expect_column_value_lengths_to_be_between",
+      "column": "summary",
+      "dimension": "validity",
+      "required": true,
+      "description": "summary has at least 30 characters",
+      "success": false,
+      "element_count": 22,
+      "unexpected_count": 3,
+      "unexpected_percent": 13.636363636363635,
+      "unexpected_examples": [
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "check_id": "title_min_length",
+      "expectation": "expect_column_value_lengths_to_be_between",
+      "column": "title",
+      "dimension": "validity",
+      "required": false,
+      "description": "title has at least 8 characters (detects truncation)",
+      "success": false,
+      "element_count": 22,
+      "unexpected_count": 4,
+      "unexpected_percent": 18.181818181818183,
+      "unexpected_examples": [
+        "Advance",
+        "Advance",
+        "Mitigat",
+        "Mitigat"
+      ]
+    },
+    {
+      "check_id": "summary_no_noise",
+      "expectation": "expect_column_values_to_not_match_regex",
+      "column": "summary",
+      "dimension": "validity",
+      "required": false,
+      "description": "summary contains no runs of garbage symbols (detects injected noise)",
+      "success": false,
+      "element_count": 22,
+      "unexpected_count": 3,
+      "unexpected_percent": 13.636363636363635,
+      "unexpected_examples": [
+        "An %*%CLr extended empirical $*&rjn study on single @&&MqZ LLM ~@*fJs is susceptible to confirmation bias when %^@2o3 evaluating ^~&kxw retrieved ^@$IUp evidence. *^%Ru1 We demonstrate #&*ren a multi-agent debate architecture ~*~jqi where ^**xoi specialized verifier #@$OkY agents critique and corroborate citations Further #@^XPv analysis *$~a9U on scaling $@^1OG parameters.",
+        "An $&$I9X extended empirical study on e &^%dp4 define freshness ~@$iQE service-level agreements *%%Ttz (SLAs) for temporal document ingestion. %@&bLJ By %#@TOd tracking #&@Gpr document age $~%YEZ and update *&*AD3 cadence, our orchestrator dynamically *&@pmm prioritizes recrawling $^~p37 high-churn @##f7W technical corpora ~~%3z5 Further *#*q7Y analysis on ~$%sn9 scaling #&#dLE parameters.",
+        "Connecting $#@2le LLMs directly to @%#NfA raw warehouse tables often &%^ziQ results in schema misunderstandings. A @@%Gqi governed semantic layer standardizes business ^#^7Qg metric definitions, @@$rsM dramatically &%^GFq boosting SQL generation *^#avX accuracy. ^$~JTB"
+      ]
+    },
+    {
+      "check_id": "paper_id_is_doi",
+      "expectation": "expect_column_values_to_match_regex",
+      "column": "paper_id",
+      "dimension": "validity",
+      "required": false,
+      "description": "paper_id looks like a DOI (10.xxxx/...)",
+      "success": true,
+      "element_count": 22,
+      "unexpected_count": 0,
+      "unexpected_percent": 0.0,
+      "unexpected_examples": []
+    },
+    {
+      "check_id": "published_iso_date",
+      "expectation": "expect_column_values_to_match_regex",
+      "column": "published",
+      "dimension": "validity",
+      "required": false,
+      "description": "published is an ISO date (YYYY-MM-DD)",
+      "success": true,
+      "element_count": 22,
+      "unexpected_count": 0,
+      "unexpected_percent": 0.0,
+      "unexpected_examples": []
+    },
+    {
+      "check_id": "source_papers_present",
+      "expectation": "expect_column_distinct_values_to_contain_set",
+      "column": "paper_id",
+      "dimension": "completeness",
+      "required": false,
+      "description": "Every paper from the raw source snapshot is present (detects dropped records)",
+      "success": false,
+      "observed_value": "19/24 source papers present",
+      "missing_count": 5,
+      "missing_examples": [
+        "10.1145/3637528.3671802",
+        "10.1145/3637528.3671804",
+        "10.1145/3637528.3671812",
+        "10.1145/3637528.3671808",
+        "10.1145/3637528.3671807"
+      ]
+    }
+  ],
+  "freshness": {
+    "threshold_days": 180,
+    "max_stale_ratio": 0.25,
+    "total_rows": 22,
+    "stale_rows": 7,
+    "stale_ratio": 0.3182,
+    "latest_published": "2026-06-12",
+    "oldest_published": "2025-03-28",
+    "newest_age_days": 105,
+    "median_age_days": 131.0,
+    "oldest_age_days": 546,
+    "stale_paper_ids": [
+      "10.1145/3637528.3671805",
+      "10.1145/3637528.3671809",
+      "10.1145/3637528.3671814",
+      "10.1145/3637528.3671815",
+      "10.1145/3637528.3671818",
+      "10.1145/3637528.3671822",
+      "10.1145/3637528.3671823"
+    ],
+    "is_fresh": false,
+    "status": "STALE"
+  },
+  "gx_validation_result": "data/quality/gx/corrupted_validation_result.json"
+}

@@ -1,0 +1,27 @@
+{
+  "ecc6cceeeee240ccc743cdbe286990388741c54b400861f9942db43856d6f8d5": {
+    "score": 5,
+    "correct": true,
+    "reasoning": "The model answer successfully captures the core finding of the reference answer, stating that static benchmarks fail to capture domain drift in enterprise knowledge bases, despite a minor typographical error in the word 'tatic'."
+  },
+  "b12c91a2f8b42a73076b00c9cc613afa2e4e7fc92831ca9858b503edbcaeb0f6": {
+    "score": 1,
+    "correct": false,
+    "reasoning": "The model answer provides entirely incorrect authors compared to the reference answer."
+  },
+  "57e5557ed6a2e27205f322dee44c54310acdecb2490877b7e4c000fff7192664": {
+    "score": 5,
+    "correct": true,
+    "reasoning": "The model answer correctly captures the main finding despite containing random noise characters."
+  },
+  "48b6b112883df54d6170175f8d20385f0ea40d21938d48aebd3c396e2481e805": {
+    "score": 1,
+    "correct": false,
+    "reasoning": "The model answer provides the year 2025, whereas the reference answer states the paper was published in 2026."
+  },
+  "e0c0db7ab2c5124a7ba41d97e843b046126cc0e81c1a2cfd986bae14fb696e7c": {
+    "score": 5,
+    "correct": true,
+    "reasoning": "The model answer contains the exact core finding of the reference answer, despite the presence of minor noise characters."
+  }
+}

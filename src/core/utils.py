@@ -34,6 +34,14 @@ def now_utc() -> datetime:
     return datetime.now(UTC)
 
 
+def project_relative(path: Path, project_dir: Path) -> str:
+    """Project-relative path with forward slashes, so artifacts never embed machine-specific paths."""
+    try:
+        return Path(path).resolve().relative_to(project_dir).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
 def normalize_whitespace(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 

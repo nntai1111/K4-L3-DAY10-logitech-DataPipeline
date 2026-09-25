@@ -1,0 +1,544 @@
+{
+  "success": false,
+  "results": [
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_table_columns_to_match_set",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column_set": [
+            "paper_id",
+            "title",
+            "summary",
+            "authors",
+            "categories",
+            "primary_category",
+            "published",
+            "updated",
+            "age_days",
+            "abs_url",
+            "pdf_url",
+            "comment",
+            "authors_joined",
+            "categories_joined",
+            "summary_chars",
+            "text_for_embedding"
+          ],
+          "exact_match": false
+        },
+        "meta": {
+          "check_id": "schema_columns"
+        },
+        "id": "0c871574-cca9-4cfc-ae83-dea540628202",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": [
+          "abs_url",
+          "age_days",
+          "authors",
+          "authors_joined",
+          "categories",
+          "categories_joined",
+          "comment",
+          "paper_id",
+          "pdf_url",
+          "primary_category",
+          "published",
+          "summary",
+          "summary_chars",
+          "text_for_embedding",
+          "title",
+          "updated"
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_table_row_count_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "min_value": 5,
+          "max_value": 5000
+        },
+        "meta": {
+          "check_id": "row_count"
+        },
+        "id": "42561e0c-cef1-420f-ac85-3347d0800f43",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": 22
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id"
+        },
+        "meta": {
+          "check_id": "paper_id_not_null"
+        },
+        "id": "f0566638-31ec-4c1a-b1e3-84dc58e15303",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": false,
+      "expectation_config": {
+        "type": "expect_column_values_to_be_unique",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id"
+        },
+        "meta": {
+          "check_id": "paper_id_unique"
+        },
+        "id": "5367c1e1-cb9d-4e3a-85a0-a1e611ee2125",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 6,
+        "unexpected_percent": 27.27272727272727,
+        "partial_unexpected_list": [
+          "10.1145/3637528.3671824",
+          "10.1145/3637528.3671821",
+          "10.1145/3637528.3671803",
+          "10.1145/3637528.3671824",
+          "10.1145/3637528.3671821",
+          "10.1145/3637528.3671803"
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 27.27272727272727,
+        "unexpected_percent_nonmissing": 27.27272727272727,
+        "partial_unexpected_counts": [
+          {
+            "value": "10.1145/3637528.3671803",
+            "count": 2
+          },
+          {
+            "value": "10.1145/3637528.3671821",
+            "count": 2
+          },
+          {
+            "value": "10.1145/3637528.3671824",
+            "count": 2
+          }
+        ],
+        "partial_unexpected_index_list": [
+          0,
+          3,
+          17,
+          19,
+          20,
+          21
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id",
+          "regex": "^10\\.\\d{4,9}/\\S+$"
+        },
+        "meta": {
+          "check_id": "paper_id_is_doi"
+        },
+        "id": "5baa9fe3-839e-4e15-b388-e788291ecf9d",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": false,
+      "expectation_config": {
+        "type": "expect_column_distinct_values_to_contain_set",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "paper_id",
+          "value_set": [
+            "10.1145/3637528.3671801",
+            "10.1145/3637528.3671802",
+            "10.1145/3637528.3671803",
+            "10.1145/3637528.3671804",
+            "10.1145/3637528.3671805",
+            "10.1145/3637528.3671806",
+            "10.1145/3637528.3671807",
+            "10.1145/3637528.3671808",
+            "10.1145/3637528.3671809",
+            "10.1145/3637528.3671810",
+            "10.1145/3637528.3671811",
+            "10.1145/3637528.3671812",
+            "10.1145/3637528.3671813",
+            "10.1145/3637528.3671814",
+            "10.1145/3637528.3671815",
+            "10.1145/3637528.3671816",
+            "10.1145/3637528.3671817",
+            "10.1145/3637528.3671818",
+            "10.1145/3637528.3671819",
+            "10.1145/3637528.3671820",
+            "10.1145/3637528.3671821",
+            "10.1145/3637528.3671822",
+            "10.1145/3637528.3671823",
+            "10.1145/3637528.3671824"
+          ]
+        },
+        "meta": {
+          "check_id": "source_papers_present"
+        },
+        "id": "ad89b8f0-e70a-4fc6-8d6a-0d81722b36a3",
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": null,
+        "missing_count": 5,
+        "partial_missing_list": [
+          "10.1145/3637528.3671802",
+          "10.1145/3637528.3671804",
+          "10.1145/3637528.3671812",
+          "10.1145/3637528.3671808",
+          "10.1145/3637528.3671807"
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "title"
+        },
+        "meta": {
+          "check_id": "title_not_null"
+        },
+        "id": "4cc3eccf-77a7-4e59-8a5a-41e7e991c659",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": false,
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "title",
+          "min_value": 8
+        },
+        "meta": {
+          "check_id": "title_min_length"
+        },
+        "id": "f261d8aa-6153-4484-af14-05ec81cc25cd",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 4,
+        "unexpected_percent": 18.181818181818183,
+        "partial_unexpected_list": [
+          "Advance",
+          "Advance",
+          "Mitigat",
+          "Mitigat"
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 18.181818181818183,
+        "unexpected_percent_nonmissing": 18.181818181818183,
+        "partial_unexpected_counts": [
+          {
+            "value": "Advance",
+            "count": 2
+          },
+          {
+            "value": "Mitigat",
+            "count": 2
+          }
+        ],
+        "partial_unexpected_index_list": [
+          6,
+          12,
+          17,
+          21
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "text_for_embedding"
+        },
+        "meta": {
+          "check_id": "text_for_embedding_not_null"
+        },
+        "id": "ed86d715-e772-499e-afd8-751594982a34",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": false,
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "summary",
+          "min_value": 30
+        },
+        "meta": {
+          "check_id": "summary_min_length"
+        },
+        "id": "dd3a08b3-567f-4b17-a3f7-2fefe951406d",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 3,
+        "unexpected_percent": 13.636363636363635,
+        "partial_unexpected_list": [
+          "",
+          "",
+          ""
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 13.636363636363635,
+        "unexpected_percent_nonmissing": 13.636363636363635,
+        "partial_unexpected_counts": [
+          {
+            "value": "",
+            "count": 3
+          }
+        ],
+        "partial_unexpected_index_list": [
+          4,
+          13,
+          14
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": false,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "summary",
+          "regex": "[#@$%^&*~|]{2,}"
+        },
+        "meta": {
+          "check_id": "summary_no_noise"
+        },
+        "id": "e7ff94e9-0cba-4828-a171-d9d971c6ce92",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 3,
+        "unexpected_percent": 13.636363636363635,
+        "partial_unexpected_list": [
+          "An %*%CLr extended empirical $*&rjn study on single @&&MqZ LLM ~@*fJs is susceptible to confirmation bias when %^@2o3 evaluating ^~&kxw retrieved ^@$IUp evidence. *^%Ru1 We demonstrate #&*ren a multi-agent debate architecture ~*~jqi where ^**xoi specialized verifier #@$OkY agents critique and corroborate citations Further #@^XPv analysis *$~a9U on scaling $@^1OG parameters.",
+          "An $&$I9X extended empirical study on e &^%dp4 define freshness ~@$iQE service-level agreements *%%Ttz (SLAs) for temporal document ingestion. %@&bLJ By %#@TOd tracking #&@Gpr document age $~%YEZ and update *&*AD3 cadence, our orchestrator dynamically *&@pmm prioritizes recrawling $^~p37 high-churn @##f7W technical corpora ~~%3z5 Further *#*q7Y analysis on ~$%sn9 scaling #&#dLE parameters.",
+          "Connecting $#@2le LLMs directly to @%#NfA raw warehouse tables often &%^ziQ results in schema misunderstandings. A @@%Gqi governed semantic layer standardizes business ^#^7Qg metric definitions, @@$rsM dramatically &%^GFq boosting SQL generation *^#avX accuracy. ^$~JTB"
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 13.636363636363635,
+        "unexpected_percent_nonmissing": 13.636363636363635,
+        "partial_unexpected_counts": [
+          {
+            "value": "An $&$I9X extended empirical study on e &^%dp4 define freshness ~@$iQE service-level agreements *%%Ttz (SLAs) for temporal document ingestion. %@&bLJ By %#@TOd tracking #&@Gpr document age $~%YEZ and update *&*AD3 cadence, our orchestrator dynamically *&@pmm prioritizes recrawling $^~p37 high-churn @##f7W technical corpora ~~%3z5 Further *#*q7Y analysis on ~$%sn9 scaling #&#dLE parameters.",
+            "count": 1
+          },
+          {
+            "value": "An %*%CLr extended empirical $*&rjn study on single @&&MqZ LLM ~@*fJs is susceptible to confirmation bias when %^@2o3 evaluating ^~&kxw retrieved ^@$IUp evidence. *^%Ru1 We demonstrate #&*ren a multi-agent debate architecture ~*~jqi where ^**xoi specialized verifier #@$OkY agents critique and corroborate citations Further #@^XPv analysis *$~a9U on scaling $@^1OG parameters.",
+            "count": 1
+          },
+          {
+            "value": "Connecting $#@2le LLMs directly to @%#NfA raw warehouse tables often &%^ziQ results in schema misunderstandings. A @@%Gqi governed semantic layer standardizes business ^#^7Qg metric definitions, @@$rsM dramatically &%^GFq boosting SQL generation *^#avX accuracy. ^$~JTB",
+            "count": 1
+          }
+        ],
+        "partial_unexpected_index_list": [
+          5,
+          9,
+          15
+        ]
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_match_regex",
+        "kwargs": {
+          "batch_id": "papers_source-papers_asset",
+          "column": "published",
+          "regex": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "meta": {
+          "check_id": "published_iso_date"
+        },
+        "id": "da0609e2-8bcb-4ed7-8e0b-319ae4774fce",
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 22,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    }
+  ],
+  "suite_name": "papers_quality_corrupted",
+  "suite_parameters": {},
+  "statistics": {
+    "evaluated_expectations": 12,
+    "successful_expectations": 7,
+    "unsuccessful_expectations": 5,
+    "success_percent": 58.333333333333336
+  },
+  "meta": {
+    "great_expectations_version": "1.18.0",
+    "batch_spec": {
+      "batch_data": "PandasDataFrame"
+    },
+    "batch_markers": {
+      "ge_load_time": "20260925T092508.689674Z",
+      "pandas_data_fingerprint": "dcd53ac3f83eae942875ba3990a30080"
+    },
+    "active_batch_definition": {
+      "datasource_name": "papers_source",
+      "data_connector_name": "fluent",
+      "data_asset_name": "papers_asset",
+      "batch_identifiers": {
+        "dataframe": "<DATAFRAME>"
+      }
+    }
+  },
+  "id": null
+}

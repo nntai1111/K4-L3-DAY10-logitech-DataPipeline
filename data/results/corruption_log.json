@@ -1,0 +1,215 @@
+{
+  "generated_at": "2026-09-25T09:25:08.612666+00:00",
+  "seed": 42,
+  "input_rows": 24,
+  "output_rows": 22,
+  "unique_papers": 19,
+  "corruptions": [
+    {
+      "step": 1,
+      "type": "drop_latest_records",
+      "description": "Newest papers never reach the index (ingestion lost the freshest batch).",
+      "parameters": {
+        "fraction": 0.2
+      },
+      "affected_rows": 5,
+      "paper_ids": [
+        "10.1145/3637528.3671812",
+        "10.1145/3637528.3671808",
+        "10.1145/3637528.3671804",
+        "10.1145/3637528.3671807",
+        "10.1145/3637528.3671802"
+      ],
+      "detected_by": [
+        "source_papers_present",
+        "freshness.latest_published"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671812",
+          "published": "2026-07-22"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671808",
+          "published": "2026-07-19"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671804",
+          "published": "2026-07-05"
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "blank_summary",
+      "description": "Summary replaced by an empty string.",
+      "parameters": {
+        "fraction": 0.15
+      },
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671810",
+        "10.1145/3637528.3671801",
+        "10.1145/3637528.3671811"
+      ],
+      "detected_by": [
+        "summary_min_length"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671810",
+          "before": "Embedding quality checks directly into data pipelines enables fail-closed governance. W...",
+          "after": ""
+        },
+        {
+          "paper_id": "10.1145/3637528.3671801",
+          "before": "Retrieval-Augmented Generation (RAG) significantly improves large language model accura...",
+          "after": ""
+        },
+        {
+          "paper_id": "10.1145/3637528.3671811",
+          "before": "Dense vector search excels at conceptual similarity but struggles with exact acronyms a...",
+          "after": ""
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "type": "inject_noise",
+      "description": "Garbage symbol tokens inserted into the summary text.",
+      "parameters": {
+        "fraction": 0.15,
+        "word_probability": 0.3,
+        "symbols": "#@$%^&*~"
+      },
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671820",
+        "10.1145/3637528.3671816",
+        "10.1145/3637528.3671806"
+      ],
+      "detected_by": [
+        "summary_no_noise"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671820",
+          "before": "An extended empirical study on single LLM is susceptible to confirmation bias when eval...",
+          "after": "An %*%CLr extended empirical $*&rjn study on single @&&MqZ LLM ~@*fJs is susceptible to..."
+        },
+        {
+          "paper_id": "10.1145/3637528.3671816",
+          "before": "An extended empirical study on e define freshness service-level agreements (SLAs) for t...",
+          "after": "An $&$I9X extended empirical study on e &^%dp4 define freshness ~@$iQE service-level ag..."
+        },
+        {
+          "paper_id": "10.1145/3637528.3671806",
+          "before": "Connecting LLMs directly to raw warehouse tables often results in schema misunderstandi...",
+          "after": "Connecting $#@2le LLMs directly to @%#NfA raw warehouse tables often &%^ziQ results in ..."
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "truncate_title",
+      "description": "Title cut to its first 7 characters.",
+      "parameters": {
+        "fraction": 0.15,
+        "max_chars": 7
+      },
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671819",
+        "10.1145/3637528.3671813",
+        "10.1145/3637528.3671803"
+      ],
+      "detected_by": [
+        "title_min_length"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671819",
+          "before": "Advanced Perspectives on Synthetic Corruption Testing: Stress-Testing Vector Search Robustness",
+          "after": "Advance"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671813",
+          "before": "Advanced Perspectives on Agentic Retrieval-Augmented Generation for Knowledge-Intensive Tasks",
+          "after": "Advance"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671803",
+          "before": "Mitigating Ghost Vectors in Dense Retrieval via Idempotent Indexing",
+          "after": "Mitigat"
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "type": "stale_date",
+      "description": "Published date shifted back 365 days.",
+      "parameters": {
+        "fraction": 0.35,
+        "shift_days": 365
+      },
+      "affected_rows": 7,
+      "paper_ids": [
+        "10.1145/3637528.3671823",
+        "10.1145/3637528.3671822",
+        "10.1145/3637528.3671818",
+        "10.1145/3637528.3671815",
+        "10.1145/3637528.3671814",
+        "10.1145/3637528.3671809",
+        "10.1145/3637528.3671805"
+      ],
+      "detected_by": [
+        "freshness_sla"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671823",
+          "before": "2026-06-11",
+          "after": "2025-06-11"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671822",
+          "before": "2026-06-10",
+          "after": "2025-06-10"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671818",
+          "before": "2026-06-06",
+          "after": "2025-06-06"
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "duplicate_rows",
+      "description": "Rows appended a second time with the same paper_id.",
+      "parameters": {
+        "fraction": 0.15
+      },
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671824",
+        "10.1145/3637528.3671821",
+        "10.1145/3637528.3671803"
+      ],
+      "detected_by": [
+        "paper_id_unique"
+      ],
+      "examples": [
+        {
+          "paper_id": "10.1145/3637528.3671824"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671821"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671803"
+        }
+      ]
+    }
+  ]
+}
