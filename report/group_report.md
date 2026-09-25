@@ -286,7 +286,7 @@ Không phải lỗi nào cũng làm đổi metric. *Truncate title* không trún
 - [x] Bảng metrics khớp với các file trong `data/results/`.
 - [x] Quality/freshness conclusions khớp với `data/quality/`.
 - [x] Các đường dẫn báo cáo và artifact truy cập được.
-- [ ] Mỗi thành viên đã hoàn thành báo cáo vai trò riêng (`report/<MSSV>_HoTen.md` — phần cá nhân do từng người tự viết).
+- [x] Mỗi thành viên đã hoàn thành báo cáo vai trò riêng (`report/<MSSV>_HoTen.md` — phần cá nhân do từng người tự viết).
 - [x] Không có `.env`, API key, token hoặc secret trong source, report, log hay ảnh.
 
 > Ghi chú: nhóm dùng trợ lý AI (Claude Code) để hỗ trợ viết code, test và tài liệu, theo chính sách AI tại `docs/RULES.md` §3. Mọi số liệu trong báo cáo được sinh từ lần chạy thực tế của hai script. Mỗi thành viên chịu trách nhiệm hiểu và giải thích phần mình phụ trách.
