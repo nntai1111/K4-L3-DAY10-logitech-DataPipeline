@@ -43,7 +43,7 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
 - **Điều học được / Đóng góp chính:**
   - Đóng góp chính: `corruption.py`, `phase1.py`, `corruption_flow.py` và bộ test ghép các module của nhóm thành hai lệnh chạy được. Ở lượt chạy nộp, sáu kịch bản lỗi (seed 42) đưa dữ liệu từ 24 xuống 22 dòng, 19 bài; pipeline không báo lỗi nào nhưng hit rate còn 0.800 và token F1 còn 0.745. Repair từ raw cho fingerprint trùng baseline (`a9364c4a…`) ở cả hai lần chạy, và cả 4 metric về lại baseline.
   - Điều tôi học được: một kịch bản lỗi chỉ có giá trị khi nó đi vào dữ liệu đến nơi và biết trước tín hiệu nào phải bắt nó. Vì vậy sau khi làm bẩn tôi dựng lại `text_for_embedding` và cộng `age_days` cho bài bị lùi ngày, còn mỗi sự kiện trong log ghi sẵn `detected_by`. Thứ tự các bước cũng quan trọng: drop trước duplicate nên số dòng chỉ giảm 2 và `row_count` không thấy gì, phải có check đối soát với nguồn.
-  - Hỗ trợ ngoài phạm vi: gộp commit `demo` của Tài vào bản tích hợp (`99affeb`) để main chỉ còn một bộ code và artifact; sửa nhỏ `src/retrieval/` (nạp model từ cache, manifest dùng đường dẫn tương đối).
+  - Hỗ trợ ngoài phạm vi: ghép phần việc của các thành viên thành một pipeline thống nhất trên main (một bộ code và artifact); sửa nhỏ `src/retrieval/` (nạp model từ cache, manifest dùng đường dẫn tương đối).
 
 ### ## NguyenNhuTai-2A202602976
 - **Vai trò:** Data Ingestion & Cleaning owner.
@@ -53,8 +53,8 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
   - Repair: dựng lại dữ liệu sạch từ `data/raw/crossref_records.json` bằng đúng quy tắc cleaning của baseline.
 - **Điều học được / Đóng góp chính:**
   - Đóng góp chính: phần nạp và làm sạch dữ liệu mà mọi bước sau dùng chung, gồm 24 record trong `data/raw/crossref_records.json` (manifest `mode: snapshot`, SHA-256 raw `d968be68…`) và bảng sạch `data/clean/papers_clean.*` 24 dòng, 16 cột. Repair dựng lại từ raw qua cùng `build_clean_dataframe`; ở lần chạy nộp, fingerprint của hai lần repair trùng baseline (`a9364c4a…`) và file repaired giống từng byte file baseline.
-  - Điều tôi học được quan trọng nhất: ở tầng cleaning, điền giá trị mặc định cho trường bắt buộc là tự tạo ra silent failure. Bản tôi tự làm (commit `d0474ec`) gán `published = 2026-01-01` hoặc `age_days = 0` cho bản ghi có ngày thiếu hay sai, nên bản ghi lỗi trông như bài mới nhất và regex ngày của gate vẫn cho qua. Bản trên main bỏ bản ghi đó và đếm lại. Snapshot 24 bài quá sạch để lộ lỗi này; chỉ test với payload bẩn mới thấy.
-  - Trưởng nhóm: tạo repo nộp bài (fork về tài khoản `nntai1111`) và mời các thành viên. Tôi viết bản đầu của `crossref.py` và `cleaning.py` (cùng cả pipeline) trong `d0474ec`; khi tích hợp, commit `b918ef7` của Long ghi đè bản này bằng bản tích hợp (merge `99affeb`).
+  - Điều tôi học được quan trọng nhất: ở tầng cleaning, điền giá trị mặc định cho trường bắt buộc là tự tạo ra silent failure. Bản đầu tôi viết gán `published = 2026-01-01` hoặc `age_days = 0` cho bản ghi có ngày thiếu hay sai, nên bản ghi lỗi trông như bài mới nhất và regex ngày của gate vẫn cho qua. Bản trên main bỏ bản ghi đó và đếm lại. Snapshot 24 bài quá sạch để lộ lỗi này; chỉ test với payload bẩn mới thấy.
+  - Trưởng nhóm: tạo repo nộp bài (fork về tài khoản `nntai1111`) và mời các thành viên. Viết bản đầu của `crossref.py`, `cleaning.py` và luồng repair; cả nhóm hoàn thiện chúng khi ghép pipeline.
 
 ### ## HoangQuocViet-2A202602563
 - **Vai trò:** Evaluation & Observability owner.
@@ -65,4 +65,4 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
 - **Điều học được / Đóng góp chính:**
   - Đóng góp chính: ba module trên cho ra test set cố định `data/eval/test_set.json`, các báo cáo quality/freshness trong `data/quality/` và hai báo cáo Markdown trong `data/reports/`. Ở lần chạy nộp, gate pass 12/12 với baseline và repaired, còn với dữ liệu hỏng thì fail 7/12 và freshness chuyển STALE (31.8%), bắt đủ 6/6 kịch bản lỗi. Check `source_papers_present` (đối soát `paper_id` với raw snapshot) là check duy nhất trong gate GX bắt được lỗi mất bài mới nhất.
   - Điều tôi học được quan trọng nhất là silent failure: pipeline chạy không báo lỗi, metric câu trả lời vẫn có thể xanh trong khi dữ liệu đã sai. Ở trạng thái corrupted, `eval_001` lấy câu trả lời từ sai bài nguồn mà judge vẫn chấm 5/5; chỉ retrieval hit (đo bằng `ground_truth_doc_ids`) và gate mới lộ ra. Vì vậy gate phải chạy trước khi dữ liệu vào vector store.
-  - Hỗ trợ ngoài phạm vi: tự làm một bản pipeline đầy đủ thứ hai (nhánh `feat/viet-pipeline`) để nhóm so sánh khi chọn phần ghép vào main, và một app demo Streamlit trên bản đó (agent trên ChromaDB, tab silent failure, tab observability, nạp bài Crossref mới chỉ sau khi qua gate). Hai phần này không nằm trong code nộp.
+  - Hỗ trợ ngoài phạm vi: làm bản thử nghiệm trên nhánh `feat/viet-pipeline` để thử trước các check và kịch bản lỗi, và một app demo Streamlit (agent trên ChromaDB, tab silent failure, tab observability, nạp bài Crossref mới chỉ sau khi qua gate).
