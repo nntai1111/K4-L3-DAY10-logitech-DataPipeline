@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "report_name": "repaired",
+  "total_records": 24,
+  "freshness": {
+    "latest_published": "2026-07-22",
+    "oldest_published": "2026-03-28",
+    "total_rows": 24,
+    "stale_rows": 1,
+    "stale_ratio": 0.0417,
+    "threshold_days": 180,
+    "is_fresh": true
+  },
+  "gx_success": true
+}

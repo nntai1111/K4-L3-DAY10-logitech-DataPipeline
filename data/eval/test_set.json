@@ -1,0 +1,93 @@
+[
+  {
+    "id": "eval_001",
+    "type": "summary",
+    "question_type": "summary",
+    "question": "What is the summary of the paper 'Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines'?",
+    "ground_truth": "Static benchmarks fail to capture domain drift in enterprise knowledge bases. We establish a synthetic test generator that auto-creates paired evaluation sets whenever new corpora are ingested.",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671812"
+    ]
+  },
+  {
+    "id": "eval_002",
+    "type": "summary",
+    "question_type": "summary",
+    "question": "What is the summary of the paper 'Multi-Agent Consensus for High-Stakes Fact Verification'?",
+    "ground_truth": "A single LLM is susceptible to confirmation bias when evaluating retrieved evidence. We demonstrate a multi-agent debate architecture where specialized verifier agents critique and corroborate citations.",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671808"
+    ]
+  },
+  {
+    "id": "eval_003",
+    "type": "authors",
+    "question_type": "authors",
+    "question": "Who are the authors of the paper 'Multi-Agent Consensus for High-Stakes Fact Verification'?",
+    "ground_truth": "Phong Vu, Ngan Hoang",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671808"
+    ]
+  },
+  {
+    "id": "eval_004",
+    "type": "authors",
+    "question_type": "authors",
+    "question": "Who are the authors of the paper 'Freshness SLAs for Real-Time LLM Knowledge Augmentation'?",
+    "ground_truth": "Bao Do, Linh Ngo",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671804"
+    ]
+  },
+  {
+    "id": "eval_005",
+    "type": "date",
+    "question_type": "date",
+    "question": "When was the paper 'Freshness SLAs for Real-Time LLM Knowledge Augmentation' published?",
+    "ground_truth": "2026-07-05",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671804"
+    ]
+  },
+  {
+    "id": "eval_006",
+    "type": "date",
+    "question_type": "date",
+    "question": "When was the paper 'Synthetic Corruption Testing: Stress-Testing Vector Search Robustness' published?",
+    "ground_truth": "2026-06-25",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671807"
+    ]
+  },
+  {
+    "id": "eval_007",
+    "type": "category",
+    "question_type": "category",
+    "question": "What domain or categories does the paper 'Synthetic Corruption Testing: Stress-Testing Vector Search Robustness' belong to?",
+    "ground_truth": "Robustness, Information Retrieval",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671807"
+    ]
+  },
+  {
+    "id": "eval_008",
+    "type": "category",
+    "question_type": "category",
+    "question": "What domain or categories does the paper 'Data Observability and Quality Gates for Production RAG Systems' belong to?",
+    "ground_truth": "Software Engineering, Data Systems",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671802"
+    ]
+  },
+  {
+    "id": "eval_009",
+    "type": "multi_hop",
+    "question_type": "multi_hop",
+    "question": "Compare the research topics of 'Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines' and 'Multi-Agent Consensus for High-Stakes Fact Verification'. What are their main fields?",
+    "ground_truth": "Paper 1 covers Evaluation Methodology, Enterprise Systems while Paper 2 covers Multi-Agent Systems, Artificial Intelligence.",
+    "ground_truth_doc_ids": [
+      "10.1145/3637528.3671812",
+      "10.1145/3637528.3671808"
+    ]
+  }
+]

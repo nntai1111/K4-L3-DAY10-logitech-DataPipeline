@@ -1,0 +1,20 @@
+{
+  "total_original_rows": 24,
+  "total_corrupted_rows": 22,
+  "scenarios_applied": [
+    "1. Drop latest 20% records (simulating stale data loss)",
+    "2. Blank summary on 20% records (simulating missing text)",
+    "3. Inject text noise into summary (simulating character noise)",
+    "4. Truncate title to < 10 chars (simulating truncated titles)",
+    "5. Stale date shifted 5 years back (simulating outdated SLA)",
+    "6. Duplicate rows added (simulating duplicate paper_ids)"
+  ],
+  "actions_count": {
+    "dropped_records": 4,
+    "blank_summary_count": 4,
+    "injected_noise_count": 4,
+    "truncated_title_count": 3,
+    "stale_date_count": 7,
+    "duplicate_rows_count": 2
+  }
+}

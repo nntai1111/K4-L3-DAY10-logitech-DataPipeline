@@ -25,20 +25,27 @@ class LocalEmbeddingIndex:
     def __init__(
         self,
         settings: Settings,
-        collection_name: str,
-        documents: list[dict[str, Any]],
-        persist_path: Path,
+        collection_name: str = "papers-baseline",
+        documents: list[dict[str, Any]] | None = None,
+        persist_path: Path | None = None,
     ):
         self.settings = settings
         self.collection_name = collection_name
-        self.documents = documents
-        self.persist_path = persist_path
+        self.documents = documents or []
+        self.persist_path = persist_path or settings.paths.chroma_dir
+        self.persist_path.mkdir(parents=True, exist_ok=True)
         self.embedding_backend = "chroma"
         self.embedding_model = MiniLMEmbeddings(settings.embedding_model)
-        self.client = chromadb.PersistentClient(path=str(persist_path))
-        self.collection = self.client.get_collection(name=collection_name)
-        self.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
-        self.documents_by_title = {document["title"].lower(): document for document in documents}
+        self.client = chromadb.PersistentClient(path=str(self.persist_path))
+        try:
+            self.collection = self.client.get_collection(name=collection_name)
+        except Exception:
+            self.collection = self.client.create_collection(
+                name=collection_name,
+                configuration={"hnsw": {"space": "cosine"}},
+            )
+        self.documents_by_paper_id = {doc["paper_id"].lower(): doc for doc in self.documents if "paper_id" in doc}
+        self.documents_by_title = {doc["title"].lower(): doc for doc in self.documents if "title" in doc}
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -79,6 +86,27 @@ class LocalEmbeddingIndex:
         if resolved_path in name_map:
             return name_map[resolved_path]
         return safe_slug(embeddings_output_path.stem)
+
+    def build_from_clean(self, clean_path: Path | None = None) -> LocalEmbeddingIndex:
+        """Nạp index từ file clean dataframe."""
+        target_path = clean_path or self.settings.paths.clean_json
+        if not target_path.exists():
+            target_path = self.settings.paths.clean_csv
+
+        if not target_path.exists():
+            raise FileNotFoundError(f"Clean dataframe not found at {target_path}")
+
+        if target_path.suffix == ".json":
+            df = pd.read_json(target_path)
+        else:
+            df = pd.read_csv(target_path)
+
+        built_idx = self.build(df, self.settings, embeddings_output_path=self.settings.paths.embeddings_json)
+        self.documents = built_idx.documents
+        self.collection = built_idx.collection
+        self.documents_by_paper_id = built_idx.documents_by_paper_id
+        self.documents_by_title = built_idx.documents_by_title
+        return self
 
     @classmethod
     def build(
@@ -165,6 +193,10 @@ class LocalEmbeddingIndex:
             )
         return scored
 
+    def semantic_search(self, query: str, top_k: int = 2) -> list[SearchResult]:
+        """Convenience alias for semantic vector search."""
+        return self.search(query, top_k=top_k)
+
     def lookup(self, value: str) -> dict[str, Any] | None:
         needle = value.strip().lower()
         if needle in self.documents_by_paper_id:
@@ -172,3 +204,4 @@ class LocalEmbeddingIndex:
         if needle in self.documents_by_title:
             return self.documents_by_title[needle]
         return None
+

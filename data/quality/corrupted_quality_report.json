@@ -1,0 +1,15 @@
+{
+  "success": false,
+  "report_name": "corrupted",
+  "total_records": 22,
+  "freshness": {
+    "latest_published": "2026-06-07",
+    "oldest_published": "2021-01-01",
+    "total_rows": 22,
+    "stale_rows": 10,
+    "stale_ratio": 0.4545,
+    "threshold_days": 180,
+    "is_fresh": false
+  },
+  "gx_success": false
+}
