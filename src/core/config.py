@@ -40,6 +40,12 @@ class Paths:
     repaired_metrics: Path
     repaired_answers: Path
     comparison_report: Path
+    run_context: Path
+
+    @property
+    def test_set_json(self) -> Path:
+        """Name used by the lab handout (1.docx) for the same file as eval_testset."""
+        return self.eval_testset
 
 
 @dataclass(frozen=True)
@@ -66,6 +72,7 @@ class Settings:
     freshness_threshold_days: int
     refresh_source: bool
     refresh_test_set: bool
+    run_date: str | None
     paths: Paths
 
 
@@ -110,6 +117,7 @@ def load_settings(project_dir: Path | None = None) -> Settings:
         repaired_metrics=data_dir / "results" / "repaired_metrics.json",
         repaired_answers=data_dir / "results" / "repaired_answers.json",
         comparison_report=data_dir / "reports" / "corruption_report.md",
+        run_context=data_dir / "results" / "run_context.json",
     )
 
     return Settings(
@@ -135,6 +143,7 @@ def load_settings(project_dir: Path | None = None) -> Settings:
         freshness_threshold_days=freshness_threshold_days,
         refresh_source=os.getenv("REFRESH_SOURCE", "").lower() in {"1", "true", "yes"},
         refresh_test_set=os.getenv("REFRESH_TEST_SET", "").lower() in {"1", "true", "yes"},
+        run_date=os.getenv("RUN_DATE") or None,
         paths=paths,
     )
 
