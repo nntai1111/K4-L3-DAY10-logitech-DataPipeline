@@ -316,3 +316,44 @@ def question_table(answers_by_state: Mapping[str, Sequence[Mapping[str, Any]]], 
         )
     head = "<tr><th>Câu</th><th>Loại</th><th>Bài bị tác động</th><th>Baseline</th><th>Corrupted</th><th>Repaired</th></tr>"
     return f'<div class="d10-table-wrap"><table class="d10-table"><thead>{head}</thead><tbody>{"".join(rows)}</tbody></table></div>'
+
+
+# --- silent failure ---------------------------------------------------------------------
+def comparison_cards(rows: Sequence[Mapping[str, Any]]) -> str:
+    """The same question answered on each collection. Each row holds label, answer, the top
+    source's metadata, hit and f1 (None for a free question) and the scenarios that touched it."""
+    cards = []
+    for row in rows:
+        verdicts = []
+        if row.get("hit") is not None:
+            verdicts.append(pill("đúng bài" if row["hit"] else "trượt bài", "pass" if row["hit"] else "problem"))
+        if row.get("f1") is not None:
+            verdicts.append(pill(f"F1 {row['f1']:.2f}", "pass" if row["f1"] >= 0.95 else "problem"))
+        answer = row["answer"].strip()
+        empty = f'<span style="color:{SIGNAL["problem"]}">(trả lời rỗng)</span>'
+        source = row.get("source")
+        if source:
+            source_html = (
+                f'<div class="d10-cmp__src">Đọc từ: <b>{esc(source["title"])}</b><br>'
+                f'{esc(source["published"])}, {esc(source["authors_joined"])}</div>'
+            )
+        else:
+            source_html = '<div class="d10-cmp__src">Không truy xuất được bài nào.</div>'
+        touched = row.get("touched") or []
+        touched_html = (
+            f'<div class="d10-cmp__touch">Bài đúng bị tác động bởi <code>{esc(", ".join(touched))}</code></div>' if touched else ""
+        )
+        cards.append(
+            '<div class="d10-state">'
+            f'<div class="d10-state__head"><span class="d10-state__name">{esc(row["label"])}</span>'
+            f'<span class="d10-cmp__verdicts">{"".join(verdicts)}</span></div>'
+            f'<div class="d10-cmp__answer">{esc(answer) if answer else empty}</div>{source_html}{touched_html}</div>'
+        )
+    return f'<div class="d10-states">{"".join(cards)}</div>'
+
+
+def ground_truth_line(question_type: str, ground_truth: str) -> str:
+    return (
+        '<div class="d10-truth"><span class="rag-label">Đáp án chuẩn</span>'
+        f'<span class="d10-truth__type">{esc(question_type)}</span><span class="d10-truth__v">{esc(ground_truth)}</span></div>'
+    )

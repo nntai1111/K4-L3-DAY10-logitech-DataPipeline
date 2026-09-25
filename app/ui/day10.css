@@ -225,6 +225,39 @@ span[translate="no"][data-testid$="Icon"] {
   margin-top: .35rem;
 }
 
+/* Silent-failure comparison. */
+.d10-states + div, .d10-states { margin-bottom: .6rem; }
+.d10-cmp__verdicts { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
+.d10-cmp__answer {
+  font-size: .95rem;
+  line-height: 1.55;
+  color: var(--rag-text);
+  min-height: 3.2rem;
+}
+.d10-cmp__src {
+  font-size: .76rem;
+  color: var(--rag-muted);
+  border-top: 1px solid var(--rag-border-soft);
+  padding-top: .55rem;
+}
+.d10-cmp__src b { font-weight: 500; color: var(--rag-text-dim); }
+.d10-cmp__touch { font-size: .76rem; color: var(--rag-muted); }
+.d10-cmp__touch code { font-family: var(--rag-mono); font-size: .72rem; color: var(--sig-problem); }
+.d10-truth {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .4rem .8rem;
+  background: var(--rag-surface);
+  border: 1px solid var(--rag-border);
+  border-radius: 12px;
+  padding: .7rem 1rem;
+  margin: .2rem 0 .8rem;
+}
+.d10-truth .rag-label { margin: 0; }
+.d10-truth__type { font-family: var(--rag-mono); font-size: .72rem; color: var(--rag-muted); }
+.d10-truth__v { font-family: var(--rag-mono); font-size: .9rem; color: var(--rag-text); }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

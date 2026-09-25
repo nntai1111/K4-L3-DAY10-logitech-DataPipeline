@@ -3,8 +3,9 @@
     streamlit run app/streamlit_app.py
 
 Tab 1 asks a tool-using agent about the indexed papers, on the collection picked in the
-sidebar, so the same question can be put to clean, corrupted and repaired data. Tab 2 reads
-the pipeline's artifacts and shows the three-state comparison, the quality gate and freshness.
+sidebar. Tab 2 puts one question to the clean, corrupted and repaired collections side by
+side, which is the silent failure the lab is about. Tab 3 reads the pipeline's artifacts and
+shows the three-state comparison, the quality gate and freshness.
 """
 
 from __future__ import annotations
@@ -15,7 +16,9 @@ import streamlit as st
 
 from core.config import load_settings
 from core.utils import read_json
+from evaluation.metrics import _token_f1 as token_f1
 from observability.reporting import SCENARIO_DETECTORS
+from retrieval.qa import answer_question
 from data import load_artifacts
 from research import COLLECTION_FILES, ask_agent, ask_extractive, build_research_agent, llm_available, load_index
 from ui import components as ui
@@ -92,7 +95,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-research_tab, observability_tab = st.tabs(["Trợ lý nghiên cứu", "Quan sát dữ liệu"])
+research_tab, failure_tab, observability_tab = st.tabs(["Trợ lý nghiên cứu", "Silent failure", "Quan sát dữ liệu"])
 
 # --- research assistant -------------------------------------------------------------------
 with research_tab:
@@ -252,3 +255,73 @@ with observability_tab:
                 ),
                 unsafe_allow_html=True,
             )
+
+
+# --- silent failure -----------------------------------------------------------------------
+STATE_NAMES = ("baseline", "corrupted", "repaired")
+FREE_QUESTION = "Tự nhập câu hỏi"
+
+
+def _first_failing_question(test_set: list[dict]) -> int:
+    """Open on a date question the corrupted data gets wrong, so the tab makes its point at once."""
+    corrupted = {answer["id"]: answer for answer in artifacts.states.get("corrupted", {}).get("answers", [])}
+    for position, item in enumerate(test_set):
+        answer = corrupted.get(item["id"])
+        if answer and answer["question_type"] == "date" and answer["token_f1"] < 0.95:
+            return position
+    return 0
+
+
+def _compare_row(name: str, question: str, expected: dict | None, scenarios_by_paper: dict) -> dict:
+    index = get_index(name)
+    result = answer_question(question, settings=settings, index=index)
+    top = index.lookup(result.retrieved_doc_ids[0]) if result.retrieved_doc_ids else None
+    row = {"label": artifacts.states[name]["label"], "answer": result.answer, "source": top["metadata"] if top else None}
+    if expected:
+        row["hit"] = any(doc_id in expected["ground_truth_doc_ids"] for doc_id in result.retrieved_doc_ids)
+        row["f1"] = token_f1(expected["ground_truth"], result.answer)
+        if name == "corrupted":
+            row["touched"] = sorted({scenario for doc_id in expected["ground_truth_doc_ids"] for scenario in scenarios_by_paper.get(doc_id, [])})
+    return row
+
+
+with failure_tab:
+    if not settings.paths.eval_testset.exists() or not artifacts.comparison_ready:
+        st.markdown(ui.empty_state("Chưa có dữ liệu so sánh", "Chạy cả hai script pipeline rồi tải lại trang."), unsafe_allow_html=True)
+    else:
+        test_set = read_json(settings.paths.eval_testset)
+        options = [f"{item['id']} · {item['question_type']} · {item['question']}" for item in test_set] + [FREE_QUESTION]
+        st.markdown(
+            ui.section_label("Cùng một câu hỏi, ba kho dữ liệu", note="chỉ truy xuất và trích xuất, không gọi LLM"),
+            unsafe_allow_html=True,
+        )
+        choice = st.selectbox("Câu hỏi", options, index=_first_failing_question(test_set), label_visibility="collapsed")
+        expected = None
+        if choice == FREE_QUESTION:
+            question = st.text_input(
+                "Câu hỏi của bạn",
+                placeholder="Ví dụ: When was 'Freshness SLAs for Real-Time LLM Knowledge Augmentation' published?",
+            )
+        else:
+            expected = test_set[options.index(choice)]
+            question = expected["question"]
+            st.markdown(ui.ground_truth_line(expected["question_type"], expected["ground_truth"]), unsafe_allow_html=True)
+
+        if question:
+            scenarios_by_paper = artifacts.scenarios_by_paper()
+            rows = [_compare_row(name, question, expected, scenarios_by_paper) for name in STATE_NAMES]
+            st.markdown(ui.comparison_cards(rows), unsafe_allow_html=True)
+            st.caption(
+                "Không kho nào báo lỗi. Câu trả lời trên dữ liệu bẩn vẫn trôi chảy và tự tin; "
+                "chỉ quality gate ở tab Quan sát dữ liệu thấy dữ liệu có vấn đề."
+            )
+            if llm_ok and st.button("Hỏi agent trên cả ba kho", icon=":material/forum:", help="Tốn 3 lượt gọi LLM trở lên"):
+                for column, name in zip(st.columns(3), STATE_NAMES):
+                    with column, st.spinner(f"Agent đang đọc kho {artifacts.states[name]['label']}..."):
+                        try:
+                            reply = ask_agent(get_agent(name), get_index(name), question)
+                            turn = 900 + STATE_NAMES.index(name)
+                            st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn), unsafe_allow_html=True)
+                            st.markdown(ui.tool_calls(reply.tool_calls), unsafe_allow_html=True)
+                        except Exception as error:  # quota, network, provider errors
+                            st.markdown(ui.banner(f"LLM lỗi: <code>{ui.esc(str(error)[:160])}</code>", kind="warn"), unsafe_allow_html=True)
