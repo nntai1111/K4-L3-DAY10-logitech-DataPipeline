@@ -40,7 +40,9 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
   - `src/pipelines/corruption_flow.py`: corruption → phát hiện → đo silent failure → auto-repair từ raw khi gate fail → đối chiếu 3 trạng thái; chứng minh idempotent bằng fingerprint.
   - `tests/` + `script/run_tests.py`: 83 test pytest, coverage 97%, chạy offline với `LLM_PROVIDER=mock`.
 - **Điều học được / Đóng góp chính:**
-  - `[Tự viết]`
+  - Đóng góp chính: `corruption.py`, `phase1.py`, `corruption_flow.py` và bộ test ghép các module của nhóm thành hai lệnh chạy được. Ở lượt chạy nộp, sáu kịch bản lỗi (seed 42) đưa dữ liệu từ 24 xuống 22 dòng, 19 bài; pipeline không báo lỗi nào nhưng hit rate còn 0.800 và token F1 còn 0.745. Repair từ raw cho fingerprint trùng baseline (`a9364c4a…`) ở cả hai lần chạy, và cả 4 metric về lại baseline.
+  - Điều tôi học được: một kịch bản lỗi chỉ có giá trị khi nó đi vào dữ liệu đến nơi và biết trước tín hiệu nào phải bắt nó. Vì vậy sau khi làm bẩn tôi dựng lại `text_for_embedding` và cộng `age_days` cho bài bị lùi ngày, còn mỗi sự kiện trong log ghi sẵn `detected_by`. Thứ tự các bước cũng quan trọng: drop trước duplicate nên số dòng chỉ giảm 2 và `row_count` không thấy gì, phải có check đối soát với nguồn.
+  - Hỗ trợ ngoài phạm vi: gộp commit `demo` của Tài vào bản tích hợp (`99affeb`) để main chỉ còn một bộ code và artifact; sửa nhỏ `src/retrieval/` (nạp model từ cache, manifest dùng đường dẫn tương đối).
 
 ### ## NguyenNhuTai-2A202602976
 - **Vai trò:** Data Ingestion & Cleaning owner.
