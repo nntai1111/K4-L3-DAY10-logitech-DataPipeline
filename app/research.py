@@ -121,7 +121,9 @@ def ask_agent(agent: Any, index: LocalEmbeddingIndex, question: str) -> Research
     for message in messages:
         if isinstance(message, AIMessage):
             for call in message.tool_calls or []:
-                argument = next(iter(call.get("args", {}).values()), "")
+                args = call.get("args", {})
+                # Show what was searched for, not top_k, whichever order the model put them in.
+                argument = args.get("query") or args.get("paper_id_or_title") or next(iter(args.values()), "")
                 tool_calls.append(f"{call['name']}({str(argument)[:60]})")
         elif isinstance(message, ToolMessage):
             for paper_id, score in PAPER_BLOCK.findall(_text_of(message)):
