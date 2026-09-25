@@ -276,17 +276,3 @@ Không phải lỗi nào cũng làm đổi metric. *Truncate title* không trún
 | Corpus có nhiều paper "Advanced Perspectives…" gần trùng nội dung | Khi paper gốc mất, retrieval trả về paper "anh em" và judge vẫn chấm đúng (`eval_001`) | Thêm check near-duplicate (cosine > 0.95 giữa embedding) vào gate; báo cáo số cặp gần trùng |
 | Snapshot cố định, `age_days` tính theo ngày chạy | Từ khoảng cuối tháng 11/2026, baseline sẽ tự chuyển STALE (> 25% bài quá 180 ngày) | Chạy `REFRESH_SOURCE=1` định kỳ; theo dõi `stale_ratio` theo thời gian |
 | Quota LLM miễn phí rất thấp | Demo agent tốn khoảng 6 request mỗi lần chạy pha 1 | Dùng `SKIP_AGENT_DEMO=1` khi không cần demo; judge đã có exact-match và cache |
-
-## 13. Checklist trước khi nộp
-
-- [x] Thông tin nhóm và repository chính xác.
-- [x] Phân công khớp với module, artifact và kết quả thực tế.
-- [x] Lệnh tái hiện đã được chạy lại trên phiên bản dùng để nộp.
-- [x] Baseline, corrupted và repaired dùng cùng evaluation set.
-- [x] Bảng metrics khớp với các file trong `data/results/`.
-- [x] Quality/freshness conclusions khớp với `data/quality/`.
-- [x] Các đường dẫn báo cáo và artifact truy cập được.
-- [x] Mỗi thành viên đã hoàn thành báo cáo vai trò riêng (`report/<MSSV>_HoTen.md` — phần cá nhân do từng người tự viết).
-- [x] Không có `.env`, API key, token hoặc secret trong source, report, log hay ảnh.
-
-> Ghi chú: nhóm dùng trợ lý AI (Claude Code) để hỗ trợ viết code, test và tài liệu, theo chính sách AI tại `docs/RULES.md` §3. Mọi số liệu trong báo cáo được sinh từ lần chạy thực tế của hai script. Mỗi thành viên chịu trách nhiệm hiểu và giải thích phần mình phụ trách.
