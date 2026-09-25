@@ -10,6 +10,8 @@ shows the three-state comparison, the quality gate and freshness.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -317,12 +319,25 @@ with failure_tab:
                 "chỉ quality gate ở tab Quan sát dữ liệu thấy dữ liệu có vấn đề."
             )
             if llm_ok and st.button("Hỏi agent trên cả ba kho", icon=":material/forum:", help="Tốn 3 lượt gọi LLM trở lên"):
+                # Cached resources are resolved here, on Streamlit's own thread; only the three
+                # agent calls run in parallel, which cuts the wait from about 33s to one call's time.
+                agents = {name: (get_agent(name), get_index(name)) for name in STATE_NAMES}
+
+                def ask(name: str):
+                    try:
+                        return ask_agent(*agents[name], question), None
+                    except Exception as error:  # quota, network, provider errors
+                        return None, error
+
+                with st.spinner("Agent đang đọc cả ba kho..."), ThreadPoolExecutor(max_workers=3) as pool:
+                    replies = dict(zip(STATE_NAMES, pool.map(ask, STATE_NAMES)))
                 for column, name in zip(st.columns(3), STATE_NAMES):
-                    with column, st.spinner(f"Agent đang đọc kho {artifacts.states[name]['label']}..."):
-                        try:
-                            reply = ask_agent(get_agent(name), get_index(name), question)
-                            turn = 900 + STATE_NAMES.index(name)
-                            st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn), unsafe_allow_html=True)
-                            st.markdown(ui.tool_calls(reply.tool_calls), unsafe_allow_html=True)
-                        except Exception as error:  # quota, network, provider errors
+                    reply, error = replies[name]
+                    with column:
+                        st.markdown(ui.section_label(artifacts.states[name]["label"]), unsafe_allow_html=True)
+                        if error is not None:
                             st.markdown(ui.banner(f"LLM lỗi: <code>{ui.esc(str(error)[:160])}</code>", kind="warn"), unsafe_allow_html=True)
+                            continue
+                        turn = 900 + STATE_NAMES.index(name)
+                        st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn), unsafe_allow_html=True)
+                        st.markdown(ui.tool_calls(reply.tool_calls), unsafe_allow_html=True)

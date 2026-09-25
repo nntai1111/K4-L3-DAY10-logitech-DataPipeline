@@ -218,6 +218,9 @@ span[translate="no"][data-testid$="Icon"] {
   border: 1px solid var(--rag-border);
   border-radius: 6px;
   padding: .12rem .45rem;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .d10-mode {
   font-size: .74rem;
