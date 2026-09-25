@@ -2,10 +2,12 @@
 
     streamlit run app/streamlit_app.py
 
-Tab 1 asks a tool-using agent about the indexed papers, on the collection picked in the
-sidebar. Tab 2 puts one question to the clean, corrupted and repaired collections side by
-side, which is the silent failure the lab is about. Tab 3 reads the pipeline's artifacts and
-shows the three-state comparison, the quality gate and freshness.
+Tab 1 asks a ReAct agent about the indexed papers, on the collection picked in the sidebar.
+On the Live collection the agent can also fetch new papers from Crossref, and they only land
+after passing the quality gate. Tab 2 sends one free-form request to any two collections at
+once. Tab 3 puts one question to the clean, corrupted and repaired collections side by side,
+which is the silent failure the lab is about. Tab 4 reads the pipeline's artifacts: the
+three-state comparison, the quality gate, freshness and the live ingest log.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from evaluation.metrics import _token_f1 as token_f1
 from observability.reporting import SCENARIO_DETECTORS
 from retrieval.qa import answer_question
 from data import load_artifacts
+from pipelines.live_ingest import gate_stats, ingest_history, live_paper_count
 from demo_cases import build_demo_cases, corpus_topics, duplicate_count
 from research import COLLECTION_FILES, ask_agent, ask_extractive, build_research_agent, llm_available, load_index
 from ui import components as ui
@@ -32,9 +35,25 @@ inject_css()
 
 EXAMPLE_QUESTIONS = [
     "Which papers propose freshness SLAs for LLM knowledge bases?",
-    "How can a RAG pipeline detect silent data failures?",
-    "Who studied ghost vectors in dense retrieval?",
+    "Kien Duong đã viết những bài nào, xuất bản khi nào?",
+    "Những bài nào về đánh giá retrieval ra sau tháng 6/2026?",
 ]
+LIVE_EXAMPLES = [
+    "Cập nhật cho tôi các bài mới về vision-language-action model cho robot",
+    "Update me on new papers about quantum error correction",
+    "Add papers on vision-language-action models published since 2023",
+]
+PAIR_EXAMPLES = [
+    "Update me on vision-language-action models for robots",
+    "When was 'Freshness SLAs for Real-Time LLM Knowledge Augmentation' published?",
+    "Kien Duong đã viết những bài nào?",
+]
+COLLECTION_DESC = {
+    "repaired": "đã sửa, gate PASS",
+    "baseline": "dữ liệu sạch",
+    "corrupted": "bị tiêm 6 lỗi, gate FAIL",
+    "live": "snapshot + bài agent nạp live qua gate",
+}
 DETECTOR_TEXT = {
     "freshness_sla": "Freshness SLA",
     None: "Không expectation nào",
@@ -73,6 +92,12 @@ with st.sidebar:
     ) or "repaired"
     # The assistant always answers with the LLM agent. Extractive answers appear only as a
     # labelled fallback when the LLM is missing or errors, so the page never goes blank.
+    if collection == "live":
+        st.caption("Live là snapshot cộng các bài agent nạp theo yêu cầu. Bài chỉ vào kho sau khi qua quality gate.")
+        if st.button("Đưa Live về snapshot", icon=":material/undo:", use_container_width=True):
+            get_index("live").reset()
+            st.toast("Kho Live đã về lại snapshot.")
+        st.markdown(ui.gate_stat_line(gate_stats(ingest_history(settings))), unsafe_allow_html=True)
     st.caption(f"Agent LLM: {llm_note}" if llm_ok else f"LLM chưa sẵn sàng ({llm_note}). Tạm trả lời bằng trích xuất.")
     if st.button("Xóa hội thoại", icon=":material/restart_alt:", use_container_width=True):
         st.session_state.turns = []
@@ -90,6 +115,8 @@ for name in ("baseline", "corrupted", "repaired"):
     if name in artifacts.states:
         passed = artifacts.states[name]["quality"]["gate_passed"]
         status.append((f"Gate {name}", "PASS" if passed else "FAIL", SIGNAL["pass"] if passed else SIGNAL["problem"]))
+if (live_count := live_paper_count(settings)) is not None:
+    status.append(("Kho Live", f"{live_count} bài", None))
 st.markdown(
     ui.header(
         "Kho bài báo RAG, có trạm kiểm soát dữ liệu",
@@ -99,7 +126,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-research_tab, failure_tab, observability_tab = st.tabs(["Trợ lý nghiên cứu", "Silent failure", "Quan sát dữ liệu"])
+research_tab, pair_tab, failure_tab, observability_tab = st.tabs(["Trợ lý nghiên cứu", "So sánh hai kho", "Silent failure", "Quan sát dữ liệu"])
 
 # --- research assistant -------------------------------------------------------------------
 with research_tab:
@@ -111,11 +138,21 @@ with research_tab:
         # run that answers it instead of lingering above the first reply.
         prompt = st.chat_input("Hỏi về các bài báo trong kho...") or st.session_state.pop("queued_question", None)
         if not st.session_state.turns and not prompt:
-            st.markdown(
-                ui.empty_state("Chưa có câu hỏi", "Hỏi bằng tiếng Việt hoặc tiếng Anh. Trợ lý chỉ trả lời từ 24 bài đã index."),
-                unsafe_allow_html=True,
-            )
-            for number, example in enumerate(EXAMPLE_QUESTIONS):
+            if collection == "live":
+                empty = ui.empty_state(
+                    "Kho Live nạp thêm được bài mới",
+                    "Nhờ agent cập nhật một chủ đề: nó gọi Crossref, cách ly dòng bẩn, chạy quality gate rồi mới index. "
+                    "Hỏi theo chủ đề, tác giả hoặc khoảng ngày như các kho khác.",
+                )
+            else:
+                empty = ui.empty_state(
+                    "Chưa có câu hỏi",
+                    f"Hỏi bằng tiếng Việt hoặc tiếng Anh, theo chủ đề, tác giả hay khoảng ngày. "
+                    f"Trợ lý chỉ trả lời từ {len(get_index(collection).documents)} bài đã index.",
+                )
+            st.markdown(empty, unsafe_allow_html=True)
+            examples = LIVE_EXAMPLES + EXAMPLE_QUESTIONS[1:2] if collection == "live" else EXAMPLE_QUESTIONS
+            for number, example in enumerate(examples):
                 if st.button(example, key=f"example-{number}", use_container_width=True):
                     st.session_state.queued_question = example
                     st.rerun()
@@ -130,7 +167,9 @@ with research_tab:
                         answer = ask_extractive(settings, index, prompt, error=f"{type(error).__name__}: {str(error)[:180]}")
                 else:
                     answer = ask_extractive(settings, index, prompt)
-            st.session_state.turns.append({"collection": collection, "answer": answer})
+            st.session_state.turns.append({"collection": collection, "answer": answer, "papers": len(index.documents)})
+            if answer.ingests:
+                st.rerun()  # the header's paper count was drawn before the ingest
 
         for turn_number, turn in enumerate(st.session_state.turns, start=1):
             answer = turn["answer"]
@@ -140,16 +179,25 @@ with research_tab:
                     ui.banner(f"LLM lỗi, đã chuyển sang chế độ trích xuất: <code>{ui.esc(answer.error)}</code>", kind="warn"),
                     unsafe_allow_html=True,
                 )
-            if answer.mode == "agent" and not ui.cited_dois(answer.answer):
+            for result in answer.ingests:
+                st.markdown(ui.ingest_card(result), unsafe_allow_html=True)
+            if answer.mode == "agent" and not answer.ingests and not ui.cited_dois(answer.answer):
                 # The agent searched and found nothing it could cite: say so, don't dress it as an answer.
                 best_score = max((source["score"] for source in answer.sources if source.get("score") is not None), default=None)
-                st.markdown(ui.out_of_scope_card(answer.answer, answer.tool_calls, best_score, corpus_topics(settings)), unsafe_allow_html=True)
+                topics = corpus_topics(settings) if turn["collection"] != "live" else []
+                st.markdown(
+                    ui.out_of_scope_card(answer.answer, answer.tool_calls, best_score, topics, papers=turn.get("papers", 24)),
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown(ui.answer_card(answer.answer, answer.sources, turn_number), unsafe_allow_html=True)
-            mode = "agent + công cụ tìm kiếm" if answer.mode == "agent" else "trích xuất, không LLM"
+            if answer.mode == "agent":
+                mode = f"agent ReAct, {len(answer.steps)} bước"
+            else:
+                mode = "trích xuất, không LLM"
             st.markdown(
                 f'<div class="d10-mode">Kho {COLLECTION_FILES[turn["collection"]][0]}, {mode}, {len(answer.sources)} bài được đọc.</div>'
-                + ui.tool_calls(answer.tool_calls),
+                + (ui.agent_steps(answer.steps) or ui.tool_calls(answer.tool_calls)),
                 unsafe_allow_html=True,
             )
 
@@ -166,6 +214,87 @@ with research_tab:
                 st.markdown(ui.empty_state("Không có nguồn", "Công cụ tìm kiếm không trả về bài nào cho câu này."), unsafe_allow_html=True)
         else:
             st.markdown(ui.empty_state("Nguồn hiện ở đây", "Mỗi bài có DOI, ngày xuất bản và điểm cosine."), unsafe_allow_html=True)
+
+# --- two collections, one request -----------------------------------------------------------
+def _pair_side(name: str, reply, error, turn: int) -> None:
+    st.markdown(
+        f'<div class="d10-pair__name">{ui.esc(COLLECTION_FILES[name][0])}</div>'
+        f'<div class="d10-pair__meta">{len(get_index(name).documents)} bài · {ui.esc(COLLECTION_DESC[name])}</div>',
+        unsafe_allow_html=True,
+    )
+    if error is not None:
+        st.markdown(ui.banner(f"LLM lỗi: <code>{ui.esc(str(error)[:160])}</code>", kind="warn"), unsafe_allow_html=True)
+        return
+    for result in reply.ingests:
+        st.markdown(ui.ingest_card(result), unsafe_allow_html=True)
+    st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn), unsafe_allow_html=True)
+    st.markdown(ui.agent_steps(reply.steps), unsafe_allow_html=True)
+    if reply.sources:
+        with st.expander(f"Nguồn ({len(reply.sources)})"):
+            st.markdown(ui.source_list(reply.sources, turn=turn, cited=ui.cited_dois(reply.answer)), unsafe_allow_html=True)
+
+
+def _ask_pair(request: str, names: tuple[str, str]) -> dict:
+    # Cached resources are resolved on Streamlit's thread; only the agent calls run in parallel.
+    agents = {name: (get_agent(name), get_index(name)) for name in names}
+
+    def ask(name: str):
+        try:
+            return ask_agent(*agents[name], request), None
+        except Exception as error:  # quota, network, provider errors
+            return None, error
+
+    with st.spinner("Agent đang làm việc trên cả hai kho..."), ThreadPoolExecutor(max_workers=2) as pool:
+        return dict(zip(names, pool.map(ask, names)))
+
+
+with pair_tab:
+    st.markdown(
+        ui.section_label("Cùng một yêu cầu, hai kho", note="mỗi kho có agent ReAct riêng, chạy song song"),
+        unsafe_allow_html=True,
+    )
+    if not llm_ok:
+        st.markdown(ui.empty_state("Cần LLM", f"So sánh hai kho dùng agent. {llm_note}."), unsafe_allow_html=True)
+    else:
+        names = list(COLLECTION_FILES)
+        pick_left, pick_right = st.container(key="pair-pick").columns(2)
+        with pick_left:
+            left = st.segmented_control(
+                "Kho A", options=names, format_func=lambda key: COLLECTION_FILES[key][0], default="repaired", key="pair_left",
+            ) or "repaired"
+        with pick_right:
+            right_options = [name for name in names if name != left]
+            right = st.segmented_control(
+                "Kho B", options=right_options, format_func=lambda key: COLLECTION_FILES[key][0],
+                default="live" if "live" in right_options else right_options[0], key=f"pair_right_{left}",
+            ) or ("live" if "live" in right_options else right_options[0])
+
+        request = st.text_input(
+            "Yêu cầu",
+            key="pair_request",
+            placeholder="Hỏi bất cứ điều gì, hoặc nhờ cập nhật một chủ đề, ví dụ: Update me on vision-language-action models",
+        )
+        chips = st.columns(len(PAIR_EXAMPLES))
+        for chip, example in zip(chips, PAIR_EXAMPLES):
+            with chip:
+                st.button(example, key=f"pair-example-{PAIR_EXAMPLES.index(example)}", use_container_width=True,
+                          on_click=lambda example=example: st.session_state.update(pair_request=example))
+        if "live" in (left, right):
+            st.caption("Chỉ agent của kho Live có công cụ nạp bài mới; kho kia trả lời từ những gì nó đang có.")
+        if st.button("Hỏi cả hai kho", type="primary", icon=":material/compare_arrows:", disabled=not request.strip()):
+            replies = _ask_pair(request.strip(), (left, right))
+            st.session_state.pair_result = {"request": request.strip(), "names": (left, right), "replies": replies}
+            if any(reply and reply.ingests for reply, _ in replies.values()):
+                st.rerun()  # refresh the header's Live paper count
+
+        pair = st.session_state.get("pair_result")
+        if pair:
+            st.markdown(ui.user_bubble(pair["request"]), unsafe_allow_html=True)
+            for number, (column, name) in enumerate(zip(st.container(key="pair-compare").columns(2), pair["names"])):
+                reply, error = pair["replies"][name]
+                with column:
+                    _pair_side(name, reply, error, turn=800 + number)
+
 
 # --- observability ------------------------------------------------------------------------
 def _detector_html(scenario_name: str, corrupted_quality: dict) -> str:
@@ -267,6 +396,24 @@ with observability_tab:
                 ),
                 unsafe_allow_html=True,
             )
+
+    history = ingest_history(settings)
+    if history:
+        stats = gate_stats(history)
+        st.markdown(
+            ui.section_label("Quality gate trên dữ liệu live", note="mỗi lần agent gọi ingest_new_papers, đọc từ data/live/ingest_log"),
+            unsafe_allow_html=True,
+        )
+        st.markdown(ui.gate_stat_tiles(stats), unsafe_allow_html=True)
+        st.markdown(
+            '<div class="d10-gate-stats">'
+            + ui.reason_bars("Vì sao lần nạp bị chặn", stats["block_reasons"], tone="problem", empty="Chưa lần nạp nào bị chặn.")
+            + ui.reason_bars("Vì sao bài bị cách ly", stats["quarantine_reasons"], tone="warning", empty="Chưa bài nào bị cách ly.")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        with st.expander(f"Nhật ký {len(history)} lần nạp"):
+            st.markdown(ui.ingest_history_table(history), unsafe_allow_html=True)
 
 
 # --- silent failure -----------------------------------------------------------------------

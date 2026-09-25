@@ -184,7 +184,7 @@ def answer_card(answer: str, sources: Sequence[Mapping[str, Any]], turn: int, *,
     return f'<div class="rag-answer">{body}</div>'
 
 
-def out_of_scope_card(answer: str, searches: Sequence[str], best_score: float | None, topics: Sequence[str]) -> str:
+def out_of_scope_card(answer: str, searches: Sequence[str], best_score: float | None, topics: Sequence[str], *, papers: int = 24) -> str:
     """The agent searched, found nothing relevant and said so: a deliberate outcome, styled
     like the Day 08 kit's refusal card rather than as an error."""
     searched = ", ".join(searches) or "không gọi công cụ"
@@ -194,7 +194,7 @@ def out_of_scope_card(answer: str, searches: Sequence[str], best_score: float | 
         '<div class="rag-refusal__h"><span class="ic">!</span>Ngoài phạm vi kho bài báo</div>'
         f'<div class="rag-refusal__b">{markdown_to_html(answer)}</div>'
         f'<div class="rag-refusal__n">Agent đã tìm ({esc(searched)}) nhưng không bài nào đủ liên quan, {score}. '
-        f"Kho có 24 bài về: {esc(', '.join(topics))}.</div>"
+        f"Kho có {papers} bài" + (f" về: {esc(', '.join(topics))}" if topics else "") + ".</div>"
         "</div>"
     )
 
@@ -211,10 +211,13 @@ def source_list(sources: Sequence[Mapping[str, Any]], *, turn: int, cited: set[s
         score = source.get("score")
         span = high - low
         ratio = 1.0 if score is None or span < 1e-9 else 0.16 + 0.84 * (score - low) / span
-        score_html = (
-            f'<div class="rag-src__score"><b>{score:.3f}</b><span>COSINE</span></div>' if score is not None
-            else '<div class="rag-src__score"><b>exact</b><span>LOOKUP</span></div>'
-        )
+        if score is not None:
+            score_html = f'<div class="rag-src__score"><b>{score:.3f}</b><span>COSINE</span></div>'
+        elif source.get("via") == "filter":
+            score_html = '<div class="rag-src__score"><b>lọc</b><span>METADATA</span></div>'
+        else:
+            score_html = '<div class="rag-src__score"><b>exact</b><span>LOOKUP</span></div>'
+
         used = cited is None or source["paper_id"].lower() in cited
         unused_tag = "" if used else '<span class="d10-unused">đã đọc, không trích dẫn</span>'
         cards.append(
@@ -434,4 +437,152 @@ def ground_truth_line(question_type: str, ground_truth: str) -> str:
     return (
         '<div class="d10-truth"><span class="rag-label">Đáp án chuẩn</span>'
         f'<span class="d10-truth__type">{esc(question_type)}</span><span class="d10-truth__v">{esc(ground_truth)}</span></div>'
+    )
+
+
+# --- agent steps and live ingest --------------------------------------------------------
+TOOL_TEXT = {
+    "semantic_search_papers": "tìm theo nghĩa",
+    "lookup_paper": "tra đúng bài",
+    "find_papers_by_author": "lọc theo tác giả",
+    "find_papers_by_date": "lọc theo ngày",
+    "ingest_new_papers": "nạp bài mới qua gate",
+}
+
+
+def agent_steps(steps: Sequence[Mapping[str, str]]) -> str:
+    """The ReAct path: each tool the agent chose, what it asked, and what came back."""
+    if not steps:
+        return ""
+    items = []
+    for number, step in enumerate(steps, start=1):
+        thought = f'<div class="d10-step__thought">{esc(step["thought"][:220])}</div>' if step.get("thought") else ""
+        observation = f'<span class="d10-step__obs">{esc(step.get("observation") or "")}</span>' if step.get("observation") else ""
+        items.append(
+            f'<li class="d10-step">{thought}<div class="d10-step__line">'
+            f'<span class="d10-step__n">{number}</span>'
+            f'<span class="d10-step__tool" title="{esc(step["tool"])}">{esc(TOOL_TEXT.get(step["tool"], step["tool"]))}</span>'
+            f'<code class="d10-step__arg">{esc(step.get("argument") or "")}</code>{observation}</div></li>'
+        )
+    return f'<ol class="d10-steps">{"".join(items)}</ol>'
+
+
+def _stage(value: str, caption: str, state: str) -> str:
+    """One pipeline stage. ``state`` is ok, bad, warn, plain or skip (never reached)."""
+    return f'<li class="d10-pipe__s is-{state}"><b>{esc(value)}</b><span>{esc(caption)}</span></li>'
+
+
+def ingest_card(result: Any) -> str:
+    """One live ingest, stage by stage, from Crossref to the collection the agent answers from."""
+    blocked = not result.indexed
+    batch_gate = result.batch_gate_passed
+    merged_gate = result.merged_gate_passed
+    stages = [
+        _stage(str(result.fetched), "từ Crossref", "plain" if result.fetched else "bad"),
+        _stage(str(result.batch_rows), "sau làm sạch", "plain" if result.batch_rows else "skip"),
+        _stage(str(len(result.quarantined)), "bị cách ly", "warn" if result.quarantined else "plain"),
+        _stage("PASS" if batch_gate else "FAIL" if batch_gate is False else "—", "gate lô mới",
+               "ok" if batch_gate else "bad" if batch_gate is False else "skip"),
+        _stage(f"+{result.new_papers}" if merged_gate is not None else "—", "bài mới",
+               "plain" if merged_gate is not None else "skip"),
+        _stage("PASS" if merged_gate else "FAIL" if merged_gate is False else "—", "gate kho gộp",
+               "ok" if merged_gate else "bad" if merged_gate is False else "skip"),
+        _stage(str(result.total_papers) if merged_gate is not None else "—", "bài trong kho",
+               "plain" if merged_gate is not None else "skip"),
+    ]
+    if blocked:
+        verdict_html = f'<span class="d10-verdict" style="color:{SIGNAL["problem"]}">BỊ CHẶN</span>'
+        note = f'<div class="d10-ingest__reason">Không nạp gì, kho giữ nguyên. Lý do: {esc(result.blocked_reason)}</div>'
+    elif result.new_papers:
+        verdict_html = f'<span class="d10-verdict" style="color:{SIGNAL["pass"]}">ĐÃ NẠP +{result.new_papers}</span>'
+        note = ""
+    else:
+        verdict_html = f'<span class="d10-verdict" style="color:{SIGNAL["neutral"]}">KHÔNG CÓ BÀI MỚI</span>'
+        note = f'<div class="d10-ingest__reason is-plain">Lô mới qua gate, nhưng cả {result.already_indexed} bài đã có trong kho.</div>'
+    quarantine = ""
+    if result.quarantined:
+        rows = "".join(
+            f'<li><code>{esc(row["paper_id"])}</code> {esc(row["reason"])}<br><span>{esc(row["title"][:110])}</span></li>'
+            for row in result.quarantined
+        )
+        quarantine = f'<details class="d10-ingest__more"><summary>{len(result.quarantined)} bài bị cách ly</summary><ul>{rows}</ul></details>'
+    added = ""
+    if result.added:
+        rows = "".join(
+            f'<li><span class="d10-ingest__date">{esc(paper["published"])}</span>{esc(paper["title"][:120])}</li>'
+            for paper in result.added
+        )
+        added = f'<details class="d10-ingest__more"><summary>{len(result.added)} bài mới đã index</summary><ul>{rows}</ul></details>'
+    return (
+        f'<div class="d10-ingest{" d10-ingest--blocked" if blocked else ""}">'
+        '<div class="d10-ingest__head"><div>'
+        '<div class="rag-label">Nạp dữ liệu live</div>'
+        f'<div class="d10-ingest__topic">{esc(result.topic)}<span>xuất bản từ {esc(result.published_since)}</span></div>'
+        f"</div>{verdict_html}</div>"
+        f'<ol class="d10-pipe">{"".join(stages)}</ol>{note}{quarantine}{added}'
+        f'<div class="d10-ingest__foot">{result.seconds:.1f} s · Great Expectations + freshness SLA · báo cáo trong data/live/quality</div>'
+        "</div>"
+    )
+
+
+def ingest_history_table(history: Sequence[Mapping[str, Any]]) -> str:
+    """Every live ingest the agent ran, newest first, from data/live/ingest_log."""
+    rows = []
+    for item in history:
+        at = str(item.get("at", ""))
+        when = f"{at[9:11]}:{at[11:13]}:{at[13:15]}" if len(at) >= 15 else at
+        gate = verdict(bool(item.get("indexed")), pass_text="NẠP", fail_text="CHẶN")
+        rows.append(
+            f"<tr><td class=\"num\">{esc(when)}</td><td>{esc(item.get('topic'))}</td>"
+            f"<td class=\"num\">{item.get('fetched', 0)}</td><td class=\"num\">{len(item.get('quarantined') or [])}</td>"
+            f"<td>{gate}</td><td class=\"num\">+{item.get('new_papers', 0) if item.get('indexed') else 0}</td>"
+            f"<td class=\"num\">{item.get('total_papers', 0)}</td>"
+            f"<td>{esc(item.get('blocked_reason') or '')}</td></tr>"
+        )
+    return (
+        '<div class="d10-table-wrap"><table class="d10-table"><thead><tr>'
+        "<th>Giờ (UTC)</th><th>Chủ đề</th><th>Crossref</th><th>Cách ly</th><th>Gate</th><th>Thêm</th><th>Kho</th><th>Lý do chặn</th>"
+        f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+    )
+
+
+def gate_stat_tiles(stats: Mapping[str, Any]) -> str:
+    """Headline numbers for the live gate: runs, verdicts, rows in, rows held back, rows added."""
+    rate = f"{stats['pass_rate']:.0%} qua gate" if stats["pass_rate"] is not None else "chưa chạy"
+    held = f"{stats['quarantined'] / stats['fetched']:.0%} số bài lấy về" if stats["fetched"] else "—"
+    return metric_tiles([
+        ("Lần nạp", str(stats["runs"]), rate, SIGNAL["neutral"]),
+        ("Qua gate", str(stats["passed"]), "được index", SIGNAL["pass"]),
+        ("Bị chặn", str(stats["blocked"]), "kho giữ nguyên", SIGNAL["problem"]),
+        ("Bài lấy về", str(stats["fetched"]), "từ Crossref", SIGNAL["evidence"]),
+        ("Bị cách ly", str(stats["quarantined"]), held, SIGNAL["warning"]),
+        ("Bài thêm vào kho", f"+{stats['added']}", "sau hai lần gate", SIGNAL["pass"]),
+    ])
+
+
+def reason_bars(title: str, counts: Mapping[str, int], *, tone: str, empty: str) -> str:
+    """How often each reason occurred, as bars on a shared scale."""
+    if not counts:
+        body = f'<div class="d10-fresh__axis">{esc(empty)}</div>'
+    else:
+        top = max(counts.values())
+        body = "".join(
+            '<div class="d10-reason__row">'
+            f"<span>{esc(label)}</span>"
+            f'<span class="d10-fresh__bar"><i style="width:{max(count / top, 0.04) * 100:.1f}%;background:{SIGNAL[tone]}"></i></span>'
+            f'<span class="d10-fresh__v">{count}</span></div>'
+            for label, count in counts.items()
+        )
+    return f'<div class="d10-fresh"><div class="rag-label" style="margin:0">{esc(title)}</div>{body}</div>'
+
+
+def gate_stat_line(stats: Mapping[str, Any]) -> str:
+    """One line for the sidebar."""
+    if not stats["runs"]:
+        return '<div class="d10-mode">Gate live: chưa có lần nạp nào.</div>'
+    return (
+        f'<div class="d10-mode">Gate live: {stats["runs"]} lần nạp, '
+        f'<span style="color:{SIGNAL["pass"]}">{stats["passed"]} qua</span>, '
+        f'<span style="color:{SIGNAL["problem"]}">{stats["blocked"]} chặn</span>, '
+        f'{stats["quarantined"]} bài cách ly, +{stats["added"]} bài vào kho.</div>'
     )

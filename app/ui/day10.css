@@ -322,3 +322,159 @@ mark.d10-diff {
   overflow-y: visible;
   padding-right: 0;
 }
+
+/* ReAct steps: which tool the agent chose, with what, and what came back. */
+.d10-steps {
+  list-style: none;
+  margin: .45rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.d10-step__line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .25rem .5rem;
+  font-size: .78rem;
+  color: var(--rag-text-dim);
+}
+.d10-step__n {
+  font-family: var(--rag-mono);
+  font-size: .68rem;
+  color: var(--rag-muted);
+  min-width: 1.1rem;
+  height: 1.1rem;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--rag-border);
+  border-radius: 999px;
+}
+.d10-step__tool { font-weight: 600; color: var(--rag-text); }
+.d10-step__arg {
+  font-family: var(--rag-mono);
+  font-size: .72rem;
+  color: var(--rag-text-dim);
+  background: var(--rag-surface-2);
+  border: 1px solid var(--rag-border);
+  border-radius: 6px;
+  padding: .02rem .4rem;
+  overflow-wrap: anywhere;
+}
+.d10-step__obs { color: var(--rag-muted); }
+.d10-step__obs::before { content: "→ "; }
+.d10-step__thought {
+  font-size: .76rem;
+  font-style: italic;
+  color: var(--rag-muted);
+  margin: 0 0 .1rem 1.6rem;
+}
+
+/* Live ingest: one card per run, the pipeline as a row of stages. */
+.d10-ingest {
+  background: var(--rag-surface);
+  border: 1px solid var(--rag-border);
+  border-radius: 12px;
+  padding: .85rem 1rem .8rem;
+  margin: .4rem 0 .7rem;
+  box-shadow: inset 3px 0 0 var(--sig-pass);
+}
+.d10-ingest--blocked {
+  border-color: color-mix(in srgb, var(--sig-problem) 38%, var(--rag-border));
+  box-shadow: inset 3px 0 0 var(--sig-problem);
+}
+.d10-ingest__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .8rem;
+}
+.d10-ingest__head .rag-label { margin: 0 0 .15rem; }
+.d10-ingest__topic { font-weight: 600; color: var(--rag-text); font-size: .95rem; }
+.d10-ingest__topic span {
+  font-weight: 400;
+  font-size: .76rem;
+  color: var(--rag-muted);
+  margin-left: .5rem;
+}
+.d10-pipe {
+  list-style: none;
+  margin: .7rem 0 .2rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: .35rem;
+}
+@media (max-width: 900px) {
+  .d10-pipe { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.d10-pipe__s {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .4rem .5rem;
+  border-radius: 8px;
+  background: var(--rag-surface-2);
+  border: 1px solid var(--rag-border-soft);
+  min-width: 0;
+}
+.d10-pipe__s b {
+  font-family: var(--rag-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: .95rem;
+  color: var(--rag-text);
+}
+.d10-pipe__s span { font-size: .68rem; color: var(--rag-muted); line-height: 1.2; }
+.d10-pipe__s.is-ok b { color: var(--sig-pass); }
+.d10-pipe__s.is-bad { border-color: color-mix(in srgb, var(--sig-problem) 45%, var(--rag-border)); }
+.d10-pipe__s.is-bad b { color: var(--sig-problem); }
+.d10-pipe__s.is-warn b { color: var(--sig-warning); }
+.d10-pipe__s.is-skip { opacity: .45; }
+.d10-ingest__reason {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--sig-problem);
+  margin-top: .45rem;
+}
+.d10-ingest__reason.is-plain { color: var(--rag-text-dim); font-weight: 400; }
+.d10-ingest__more { margin-top: .45rem; font-size: .8rem; color: var(--rag-text-dim); }
+.d10-ingest__more summary { cursor: pointer; color: var(--rag-muted); }
+.d10-ingest__more ul { margin: .35rem 0 0; padding-left: 1rem; display: flex; flex-direction: column; gap: .25rem; }
+.d10-ingest__more code { font-family: var(--rag-mono); font-size: .7rem; color: var(--sig-warning); }
+.d10-ingest__more li span { color: var(--rag-muted); }
+.d10-ingest__date {
+  font-family: var(--rag-mono);
+  font-size: .7rem;
+  color: var(--rag-muted);
+  margin-right: .5rem;
+}
+.d10-ingest__foot { font-size: .7rem; color: var(--rag-muted); margin-top: .55rem; }
+
+/* Two-collection comparison: two equal columns, neither pinned by the kit. */
+.st-key-pair-compare [data-testid="stColumn"] > div,
+.st-key-pair-pick [data-testid="stColumn"] > div {
+  position: static;
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+.d10-pair__name {
+  font-family: var(--rag-serif);
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--rag-text);
+  margin: .6rem 0 .1rem;
+}
+.d10-pair__meta { font-size: .76rem; color: var(--rag-muted); margin-bottom: .4rem; }
+
+/* Live gate statistics: why runs were blocked and rows held back. */
+.d10-reason__row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr 2.5rem;
+  align-items: center;
+  gap: .8rem;
+  font-size: .8rem;
+}
+.d10-gate-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .75rem; }
+@media (max-width: 900px) { .d10-gate-stats { grid-template-columns: 1fr; } }
