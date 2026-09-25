@@ -1,0 +1,8 @@
+# Shell scripts must keep LF endings even with core.autocrlf=true, or bash fails on the "\r".
+*.sh text eol=lf
+
+# ChromaDB segment files and its sqlite store are binary. Without this, core.autocrlf=true
+# treats length.bin as text and a Windows checkout rewrites its LF bytes to CRLF.
+data/chroma/** binary
+*.bin binary
+*.sqlite3 binary
