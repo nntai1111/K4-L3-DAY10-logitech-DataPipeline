@@ -26,19 +26,50 @@ class LocalEmbeddingIndex:
         self,
         settings: Settings,
         collection_name: str,
-        documents: list[dict[str, Any]],
-        persist_path: Path,
+        documents: list[dict[str, Any]] | None = None,
+        persist_path: Path | None = None,
     ):
         self.settings = settings
         self.collection_name = collection_name
-        self.documents = documents
-        self.persist_path = persist_path
+        self.persist_path = persist_path or settings.paths.chroma_dir
         self.embedding_backend = "chroma"
         self.embedding_model = MiniLMEmbeddings(settings.embedding_model)
-        self.client = chromadb.PersistentClient(path=str(persist_path))
-        self.collection = self.client.get_collection(name=collection_name)
+        self.client = chromadb.PersistentClient(path=str(self.persist_path))
+        if documents is None:
+            # The lab handout's form, LocalEmbeddingIndex(settings, collection_name=...), followed
+            # by build_from_clean(). Reuse the collection's manifest when it has already been built.
+            manifest = self._manifest_path(settings, collection_name)
+            documents = read_json(manifest)["documents"] if manifest.exists() else []
+            self.collection = self.client.get_or_create_collection(name=collection_name, configuration={"hnsw": {"space": "cosine"}})
+        else:
+            self.collection = self.client.get_collection(name=collection_name)
+        self._index_documents(documents)
+
+    def _index_documents(self, documents: list[dict[str, Any]]) -> None:
+        self.documents = documents
         self.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
         self.documents_by_title = {document["title"].lower(): document for document in documents}
+
+    @staticmethod
+    def _manifest_path(settings: Settings, collection_name: str) -> Path:
+        manifests = {
+            settings.baseline_collection_name: settings.paths.embeddings_json,
+            settings.corrupted_collection_name: settings.paths.corrupted_embeddings_json,
+            settings.repaired_collection_name: settings.paths.repaired_embeddings_json,
+        }
+        return manifests.get(collection_name, settings.paths.embeddings_json.parent / f"{safe_slug(collection_name)}.json")
+
+    def build_from_clean(self) -> "LocalEmbeddingIndex":
+        """Handout entry point: (re)build this collection from data/clean/papers_clean.json."""
+        clean_df = pd.DataFrame(read_json(self.settings.paths.clean_json))
+        built = self.build(clean_df, self.settings, self._manifest_path(self.settings, self.collection_name))
+        self.collection = built.collection
+        self._index_documents(built.documents)
+        return self
+
+    def semantic_search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        """Name the lab handout uses for search()."""
+        return self.search(query, top_k=top_k)
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:

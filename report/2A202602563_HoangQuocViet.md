@@ -27,7 +27,7 @@
 | Orchestration | `src/pipelines/phase1.py`, `corruption_flow.py`, `common.py` | `.env`, artifact pha 1 | `run_context.json`, `repair_idempotency.json`, metrics 3 trạng thái | Hoàn thành |
 | B1 Dashboard | `app/streamlit_app.py`, `app/research.py`, `app/data.py`, `app/ui/` | Artifact trong `data/`, 3 collection ChromaDB | Trang Streamlit ba tab: trợ lý nghiên cứu, "Silent failure", quan sát dữ liệu | Hoàn thành |
 | B2 Auto-repair | `src/pipelines/corruption_flow.py` | `gate_passed` của batch bẩn | Repair từ raw, `auto_triggered` trong `repair_idempotency.json` | Hoàn thành |
-| B3 Pytest | `tests/`, `script/run_tests.sh` | Snapshot raw copy sang thư mục tạm | Kết quả pytest | Hoàn thành: 249 test pass trong 54.97 giây, coverage `src/` 99% |
+| B3 Pytest | `tests/`, `script/run_tests.sh` | Snapshot raw copy sang thư mục tạm | Kết quả pytest | Hoàn thành: 252 test pass trong 54.47 giây, coverage `src/` 99% |
 
 Phần việc của tôi là đầu vào trực tiếp cho hai thành viên còn lại: Nguyễn Như Tài review, merge và tái hiện từ clean clone; Lò Văn Long chạy lại trên máy thứ hai, chạy corruption flow hai lần để đối chiếu sha256, và review phần quality gate cùng phân tích corruption.
 
