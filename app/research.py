@@ -122,7 +122,9 @@ def llm_available(settings: Settings) -> tuple[bool, str]:
 
 def _fold(text: str) -> str:
     """Lowercase without accents, so "Nguyen" finds "Nguyễn"."""
-    return "".join(ch for ch in unicodedata.normalize("NFKD", text or "") if not unicodedata.combining(ch)).lower()
+    # Đ has no Unicode decomposition, so NFKD alone would leave "Đoàn" unreachable from "Doan".
+    text = (text or "").replace("Đ", "D").replace("đ", "d")
+    return "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch)).lower()
 
 
 def _day_bound(value: str, *, upper: bool) -> date | None:
@@ -172,8 +174,10 @@ def build_research_agent(settings: Settings, index: LocalEmbeddingIndex | LiveCo
     @tool
     def find_papers_by_author(author: str) -> str:
         """Find papers with this author. Matching ignores case and accents; a surname alone works."""
-        wanted = _fold(author).strip()
-        matches = [document for document in index.documents if wanted and wanted in _fold(document["metadata"]["authors_joined"])]
+        wanted = " ".join(_fold(author).split())
+        # Whole words only: "Do" is Bao Do, not Thuy Doan.
+        pattern = re.compile(rf"(?<!\w){re.escape(wanted)}(?!\w)") if wanted else None
+        matches = [document for document in index.documents if pattern and pattern.search(_fold(document["metadata"]["authors_joined"]))]
         matches.sort(key=lambda document: document["metadata"]["published"], reverse=True)
         if not matches:
             return f"No paper in the collection has an author matching '{author}'."
@@ -191,14 +195,19 @@ def build_research_agent(settings: Settings, index: LocalEmbeddingIndex | LiveCo
 
         if topic.strip():
             ranked = [(index.lookup(result.paper_id), result.score) for result in index.search(topic, top_k=len(index.documents))]
-            hits = [(document, score) for document, score in ranked if document and in_range(document)][:8]
+            in_window = [(document, score) for document, score in ranked if document and in_range(document)]
+            order = "most relevant"
         else:
             newest = sorted((document for document in index.documents if in_range(document)), key=lambda document: document["metadata"]["published"], reverse=True)
-            hits = [(document, None) for document in newest[:8]]
+            in_window = [(document, None) for document in newest]
+            order = "newest"
         window = f"{after or 'the beginning'} to {before or 'today'}"
-        if not hits:
+        if not in_window:
             return f"No paper in the collection was published from {window}."
-        return f"{len(hits)} paper(s) published from {window}:\n\n" + "\n\n".join(_paper_block(document, score) for document, score in hits)
+        hits = in_window[:8]
+        # The count is the whole window, so the agent never mistakes "8 shown" for "8 exist".
+        shown = f", showing the {len(hits)} {order}" if len(hits) < len(in_window) else ""
+        return f"{len(in_window)} paper(s) published from {window}{shown}:\n\n" + "\n\n".join(_paper_block(document, score) for document, score in hits)
 
     tools = [semantic_search_papers, lookup_paper, find_papers_by_author, find_papers_by_date]
     prompt = SYSTEM_PROMPT
@@ -293,7 +302,11 @@ def ask_agent(agent: Any, index: LocalEmbeddingIndex | LiveCollection, question:
             for paper_id, score in PAPER_BLOCK.findall(text):
                 if paper_id not in seen or (seen[paper_id][0] is None and score):
                     seen[paper_id] = (float(score), "cosine") if score else (None, via)
-    final = next((_text_of(message) for message in reversed(messages) if isinstance(message, AIMessage) and _text_of(message)), "")
+    # Text written alongside a tool call is a step's reasoning, never the answer.
+    final = next(
+        (text for message in reversed(messages) if isinstance(message, AIMessage) and not message.tool_calls and (text := _text_of(message))),
+        "",
+    )
     sources = [source for paper_id, (score, via) in seen.items() if (source := _source(index, paper_id, score, via))]
     ingests = list(getattr(index, "ingest_results", [])[ingests_before:])
     return ResearchAnswer(
