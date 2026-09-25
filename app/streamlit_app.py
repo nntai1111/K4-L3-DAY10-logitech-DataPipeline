@@ -1,0 +1,254 @@
+"""Day 10 research assistant and data-observability page.
+
+    streamlit run app/streamlit_app.py
+
+Tab 1 asks a tool-using agent about the indexed papers, on the collection picked in the
+sidebar, so the same question can be put to clean, corrupted and repaired data. Tab 2 reads
+the pipeline's artifacts and shows the three-state comparison, the quality gate and freshness.
+"""
+
+from __future__ import annotations
+
+import altair as alt
+import pandas as pd
+import streamlit as st
+
+from core.config import load_settings
+from core.utils import read_json
+from observability.reporting import SCENARIO_DETECTORS
+from data import load_artifacts
+from research import COLLECTION_FILES, ask_agent, ask_extractive, build_research_agent, llm_available, load_index
+from ui import components as ui
+from ui.theme import COLORS, SIGNAL, inject_css
+
+st.set_page_config(page_title="Day 10 Research", page_icon=":material/menu_book:", layout="wide")
+inject_css()
+
+EXAMPLE_QUESTIONS = [
+    "Which papers propose freshness SLAs for LLM knowledge bases?",
+    "How can a RAG pipeline detect silent data failures?",
+    "Who studied ghost vectors in dense retrieval?",
+]
+DETECTOR_TEXT = {
+    "freshness_sla": "Freshness SLA",
+    None: "Không expectation nào",
+}
+
+
+@st.cache_resource(show_spinner=False)
+def get_settings():
+    return load_settings()
+
+
+@st.cache_resource(show_spinner="Đang nạp ChromaDB và mô hình embedding...")
+def get_index(state: str):
+    return load_index(get_settings(), state)
+
+
+@st.cache_resource(show_spinner=False)
+def get_agent(state: str):
+    return build_research_agent(get_settings(), get_index(state))
+
+
+settings = get_settings()
+artifacts = load_artifacts(settings)
+llm_ok, llm_note = llm_available(settings)
+
+# --- sidebar ------------------------------------------------------------------------------
+with st.sidebar:
+    st.markdown('<p class="rag-panel-title">Cài đặt</p>', unsafe_allow_html=True)
+    collection = st.segmented_control(
+        "Kho dữ liệu cho trợ lý",
+        options=list(COLLECTION_FILES),
+        format_func=lambda key: COLLECTION_FILES[key][0],
+        default="repaired",
+        key="collection",
+        help="Hỏi cùng một câu trên dữ liệu sạch, dữ liệu bẩn và dữ liệu đã sửa để thấy silent failure.",
+    ) or "repaired"
+    use_agent = st.toggle("Dùng agent (LLM)", value=llm_ok, disabled=not llm_ok, key="use_agent")
+    st.caption(f"LLM: {llm_note}" if llm_ok else f"LLM tắt: {llm_note}. Trả lời bằng chế độ trích xuất.")
+    if st.button("Xóa hội thoại", icon=":material/restart_alt:", use_container_width=True):
+        st.session_state.turns = []
+    st.divider()
+    st.markdown('<div class="rag-label">Bảng màu</div>', unsafe_allow_html=True)
+    st.markdown(ui.signal_legend(), unsafe_allow_html=True)
+
+# --- header -------------------------------------------------------------------------------
+context = artifacts.run_context or {}
+status = [
+    ("run_date", context.get("run_date", "chưa chạy"), None),
+    ("Nguồn", f"Crossref {context.get('source_mode', '?')}, {context.get('clean_rows', '?')} bài", None),
+]
+for name in ("baseline", "corrupted", "repaired"):
+    if name in artifacts.states:
+        passed = artifacts.states[name]["quality"]["gate_passed"]
+        status.append((f"Gate {name}", "PASS" if passed else "FAIL", SIGNAL["pass"] if passed else SIGNAL["problem"]))
+st.markdown(
+    ui.header(
+        "Kho bài báo RAG, có trạm kiểm soát dữ liệu",
+        "Crossref vào, làm sạch, Great Expectations chặn dữ liệu xấu, ChromaDB phục vụ trợ lý nghiên cứu.",
+        status,
+    ),
+    unsafe_allow_html=True,
+)
+
+research_tab, observability_tab = st.tabs(["Trợ lý nghiên cứu", "Quan sát dữ liệu"])
+
+# --- research assistant -------------------------------------------------------------------
+with research_tab:
+    st.session_state.setdefault("turns", [])
+    chat_column, source_column = st.columns([3, 2], gap="large")
+
+    with chat_column:
+        # An example button queues its question and reruns, so the empty state is gone on the
+        # run that answers it instead of lingering above the first reply.
+        prompt = st.chat_input("Hỏi về các bài báo trong kho...") or st.session_state.pop("queued_question", None)
+        if not st.session_state.turns and not prompt:
+            st.markdown(
+                ui.empty_state("Chưa có câu hỏi", "Hỏi bằng tiếng Việt hoặc tiếng Anh. Trợ lý chỉ trả lời từ 24 bài đã index."),
+                unsafe_allow_html=True,
+            )
+            for number, example in enumerate(EXAMPLE_QUESTIONS):
+                if st.button(example, key=f"example-{number}", use_container_width=True):
+                    st.session_state.queued_question = example
+                    st.rerun()
+
+        if prompt:
+            index = get_index(collection)
+            with st.spinner("Đang tìm trong kho bài báo..."):
+                if use_agent and llm_ok:
+                    try:
+                        answer = ask_agent(get_agent(collection), index, prompt)
+                    except Exception as error:  # quota, network, provider errors
+                        answer = ask_extractive(settings, index, prompt, error=f"{type(error).__name__}: {str(error)[:180]}")
+                else:
+                    answer = ask_extractive(settings, index, prompt)
+            st.session_state.turns.append({"collection": collection, "answer": answer})
+
+        for turn_number, turn in enumerate(st.session_state.turns, start=1):
+            answer = turn["answer"]
+            st.markdown(ui.user_bubble(answer.question), unsafe_allow_html=True)
+            if answer.error:
+                st.markdown(
+                    ui.banner(f"LLM lỗi, đã chuyển sang chế độ trích xuất: <code>{ui.esc(answer.error)}</code>", kind="warn"),
+                    unsafe_allow_html=True,
+                )
+            st.markdown(ui.answer_card(answer.answer, answer.sources, turn_number), unsafe_allow_html=True)
+            mode = "agent + công cụ tìm kiếm" if answer.mode == "agent" else "trích xuất, không LLM"
+            st.markdown(
+                f'<div class="d10-mode">Kho {COLLECTION_FILES[turn["collection"]][0]}, {mode}, {len(answer.sources)} bài được đọc.</div>'
+                + ui.tool_calls(answer.tool_calls),
+                unsafe_allow_html=True,
+            )
+
+    with source_column:
+        st.markdown(ui.section_label("Nguồn", note="bài báo trợ lý đã đọc cho câu gần nhất"), unsafe_allow_html=True)
+        if st.session_state.turns:
+            latest = st.session_state.turns[-1]["answer"]
+            if latest.sources:
+                st.markdown(ui.source_list(latest.sources, turn=len(st.session_state.turns)), unsafe_allow_html=True)
+            else:
+                st.markdown(ui.empty_state("Không có nguồn", "Công cụ tìm kiếm không trả về bài nào cho câu này."), unsafe_allow_html=True)
+        else:
+            st.markdown(ui.empty_state("Nguồn hiện ở đây", "Mỗi bài có DOI, ngày xuất bản và điểm cosine."), unsafe_allow_html=True)
+
+# --- observability ------------------------------------------------------------------------
+def _detector_html(scenario_name: str, corrupted_quality: dict) -> str:
+    detector = SCENARIO_DETECTORS.get(scenario_name)
+    if detector is None:
+        return f'<span style="color:{SIGNAL["problem"]}">Không expectation nào bắt được</span>'
+    if detector == "freshness_sla":
+        caught = not corrupted_quality["freshness"]["is_fresh"]
+    else:
+        item = next((item for item in corrupted_quality["expectations"] if f"{item['expectation']}({item['column']})" == detector), None)
+        caught = item is not None and not item["success"]
+    tone = "pass" if caught else "problem"
+    label = DETECTOR_TEXT.get(detector, detector)
+    return f'<span style="color:{SIGNAL[tone]}">{"Đã bắt" if caught else "Không bắt"}</span><br><code>{ui.esc(label)}</code>'
+
+
+def _age_chart() -> alt.Chart:
+    frames = []
+    for name, path in (("Baseline", settings.paths.clean_json), ("Corrupted", settings.paths.corrupted_clean_json), ("Repaired", settings.paths.repaired_clean_json)):
+        rows = pd.DataFrame(read_json(path))[["paper_id", "title", "published", "age_days"]]
+        frames.append(rows.assign(state=name))
+    ages = pd.concat(frames, ignore_index=True)
+    ages["freshness"] = ages["age_days"].map(lambda days: "quá 180 ngày" if days > settings.freshness_threshold_days else "còn tươi")
+    points = (
+        alt.Chart(ages)
+        .mark_circle(size=70, opacity=0.8)
+        .encode(
+            x=alt.X("age_days:Q", title="Tuổi bài báo (ngày)"),
+            y=alt.Y("state:N", title=None, sort=["Baseline", "Corrupted", "Repaired"]),
+            yOffset=alt.YOffset("jitter:Q"),
+            color=alt.Color(
+                "freshness:N",
+                scale=alt.Scale(domain=["còn tươi", "quá 180 ngày"], range=[SIGNAL["pass"], SIGNAL["warning"]]),
+                legend=alt.Legend(title=None, orient="top"),
+            ),
+            tooltip=["title:N", "published:N", "age_days:Q", "state:N"],
+        )
+        .transform_calculate(jitter="random()")
+    )
+    threshold = alt.Chart(pd.DataFrame({"x": [settings.freshness_threshold_days]})).mark_rule(strokeDash=[4, 4], color=COLORS["muted"]).encode(x="x:Q")
+    return (points + threshold).properties(height=220).configure_axis(labelColor=COLORS["muted"], titleColor=COLORS["muted"], gridColor=COLORS["border"]).configure_view(stroke=None)
+
+
+with observability_tab:
+    if not artifacts.comparison_ready:
+        st.markdown(
+            ui.empty_state(
+                "Chưa đủ dữ liệu để so sánh",
+                "Chạy python script/run_phase1.py rồi python script/run_corruption_flow.py, sau đó tải lại trang.",
+            ),
+            unsafe_allow_html=True,
+        )
+        if artifacts.missing:
+            st.caption("Thiếu: " + ", ".join(artifacts.missing))
+    else:
+        states = artifacts.states
+        st.markdown(ui.section_label("Ba trạng thái", note="cùng 10 câu hỏi, cùng run_date"), unsafe_allow_html=True)
+        st.markdown(ui.state_cards(states), unsafe_allow_html=True)
+
+        fallback_counts = [
+            sum(1 for answer in states[name]["answers"] if answer["judge"]["reasoning"].startswith("Fallback heuristic judge"))
+            for name in ("baseline", "corrupted", "repaired")
+        ]
+        if any(fallback_counts):
+            st.markdown(
+                ui.banner(
+                    f"Judge dùng heuristic dự phòng cho {sum(fallback_counts)} trên {3 * len(states['baseline']['answers'])} câu "
+                    "(LLM không sẵn sàng lúc chạy). Hit rate và token F1 không bị ảnh hưởng.",
+                    kind="warn",
+                ),
+                unsafe_allow_html=True,
+            )
+
+        st.markdown(ui.section_label("Quality gate", note="Great Expectations 1.x, ephemeral context"), unsafe_allow_html=True)
+        st.markdown(ui.gate_table(states), unsafe_allow_html=True)
+
+        st.markdown(ui.section_label("Độ tươi dữ liệu", note="Freshness SLA"), unsafe_allow_html=True)
+        st.markdown(ui.freshness_bars(states), unsafe_allow_html=True)
+        with st.expander("Phân bố tuổi bài báo theo trạng thái"):
+            st.altair_chart(_age_chart(), use_container_width=True)
+
+        if artifacts.corruption_log:
+            st.markdown(ui.section_label("Sáu kịch bản tiêm lỗi", note=f"seed {artifacts.corruption_log['seed']}"), unsafe_allow_html=True)
+            detectors = {scenario["scenario"]: _detector_html(scenario["scenario"], states["corrupted"]["quality"]) for scenario in artifacts.corruption_log["scenarios"]}
+            st.markdown(ui.scenario_table(artifacts.corruption_log, detectors), unsafe_allow_html=True)
+
+        with st.expander("Kết quả từng câu hỏi"):
+            answers_by_state = {name: states[name]["answers"] for name in ("baseline", "corrupted", "repaired")}
+            st.markdown(ui.question_table(answers_by_state, artifacts.scenarios_by_paper()), unsafe_allow_html=True)
+
+        if artifacts.repair:
+            repair = artifacts.repair
+            same = "trùng" if repair["repaired_matches_baseline"] else "KHÁC"
+            st.markdown(
+                ui.banner(
+                    f"Repair đọc lại <code>{ui.esc(repair['source'])}</code> với run_date {ui.esc(repair['run_date'])}. "
+                    f"Bảng sau repair {same} bảng baseline (sha256 <code>{ui.esc(repair['repaired_sha256'][:16])}</code>). "
+                    + ("Kích hoạt tự động vì gate fail." if repair["auto_triggered"] else "Chạy thủ công."),
+                ),
+                unsafe_allow_html=True,
+            )

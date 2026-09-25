@@ -1,0 +1,241 @@
+/* Day 10 additions, loaded after kit.css. Plain CSS, no build step; reads only the kit's
+   --rag-* variables. Unlayered on purpose, like the kit's own component rules, because
+   Streamlit's emotion styles are unlayered and a layered rule would lose to them. */
+
+:root {
+  --sig-evidence: var(--rag-dense);
+  --sig-pass: var(--rag-bm25);
+  --sig-warning: var(--rag-hybrid);
+  --sig-problem: var(--rag-fallback);
+}
+
+/* Streamlit draws expander and alert icons as Material ligatures; the kit's global font rule
+   would otherwise print the ligature name as text. */
+[data-testid="stExpanderIcon"],
+[data-testid="stAlertDynamicIcon"],
+span[translate="no"][data-testid$="Icon"] {
+  font-family: "Material Symbols Rounded" !important;
+}
+
+/* Rows nested inside a column must not inherit the kit's sticky second column. */
+[data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] > div {
+  position: static;
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+
+.d10-label {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  margin: 1.4rem 0 .55rem;
+}
+.d10-label__note {
+  font-family: var(--rag-font);
+  font-size: .78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--rag-muted);
+}
+
+/* Three-state comparison: one column per state, same rows in each. */
+.d10-states {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+@media (max-width: 900px) {
+  .d10-states { grid-template-columns: 1fr; }
+}
+.d10-state {
+  background: var(--rag-surface);
+  border: 1px solid var(--rag-border);
+  border-radius: 12px;
+  padding: .9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+}
+.d10-state__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+}
+.d10-state__name {
+  font-family: var(--rag-serif);
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--rag-text);
+}
+.d10-state__desc {
+  font-size: .78rem;
+  color: var(--rag-muted);
+  margin-top: -.45rem;
+}
+.d10-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem .9rem;
+}
+.d10-metric__k {
+  font-size: .7rem;
+  color: var(--rag-muted);
+}
+.d10-metric__v {
+  font-family: var(--rag-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+  color: var(--rag-text);
+}
+.d10-metric__d {
+  font-family: var(--rag-mono);
+  font-size: .72rem;
+  margin-left: .35rem;
+}
+
+.d10-verdict {
+  font-family: var(--rag-mono);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: .12rem .5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+/* Tables: gate checks, scenarios, per-question results. */
+.d10-table-wrap {
+  overflow-x: auto;
+  background: var(--rag-surface);
+  border: 1px solid var(--rag-border);
+  border-radius: 12px;
+}
+.d10-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.d10-table th {
+  text-align: left;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--rag-muted);
+  background: var(--rag-surface-2);
+  padding: .55rem .8rem;
+  border-bottom: 1px solid var(--rag-border);
+}
+.d10-table td {
+  padding: .55rem .8rem;
+  border-bottom: 1px solid var(--rag-border-soft);
+  vertical-align: top;
+  color: var(--rag-text-dim);
+}
+.d10-table tr:last-child td { border-bottom: none; }
+.d10-table code {
+  font-family: var(--rag-mono);
+  font-size: .76rem;
+  color: var(--rag-text);
+}
+.d10-table .num {
+  text-align: right;
+  font-family: var(--rag-mono);
+  font-variant-numeric: tabular-nums;
+}
+.d10-cell {
+  font-family: var(--rag-mono);
+  font-size: .74rem;
+  font-weight: 600;
+}
+.d10-cell small {
+  display: block;
+  font-weight: 400;
+  color: var(--rag-muted);
+}
+
+/* Freshness bars: one per state, filled to the stale share, with the 25% SLA marked. */
+.d10-fresh {
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  background: var(--rag-surface);
+  border: 1px solid var(--rag-border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.d10-fresh__row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr 6.5rem;
+  align-items: center;
+  gap: .8rem;
+  font-size: .8rem;
+}
+.d10-fresh__bar {
+  position: relative;
+  height: .55rem;
+}
+.d10-fresh__bar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+.d10-fresh__bar b {
+  position: absolute;
+  top: -.3rem;
+  bottom: -.3rem;
+  width: 0;
+  border-left: 1.5px dashed var(--rag-muted);
+}
+.d10-fresh__v {
+  font-family: var(--rag-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.d10-fresh__axis {
+  font-size: .72rem;
+  color: var(--rag-muted);
+}
+
+/* Research assistant. */
+.d10-toolcalls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .45rem 0 0;
+}
+.d10-toolcall {
+  font-family: var(--rag-mono);
+  font-size: .72rem;
+  color: var(--rag-text-dim);
+  background: var(--rag-surface-2);
+  border: 1px solid var(--rag-border);
+  border-radius: 6px;
+  padding: .12rem .45rem;
+}
+.d10-mode {
+  font-size: .74rem;
+  color: var(--rag-muted);
+  margin-top: .35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* Sidebar colour key: name on the first line, its meaning under it, so neither wraps. */
+.rag-legend__i {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  column-gap: .6rem;
+  row-gap: .05rem;
+  align-items: start;
+}
+.rag-legend__i i { margin-top: .32rem; }
+.rag-legend__i em { grid-column: 2; }

@@ -1,0 +1,31 @@
+# Streamlit theme for the Day 10 page, from the K4A UI Kit via the L3A demo.
+#
+# Streamlit 1.64 reads a config.toml next to the main script, so this applies to
+# `streamlit run app/streamlit_app.py` from the repo root without adding anything at the root.
+#
+# primaryColor is the kit's slate chrome, deliberately not one of the four signal colours:
+# a toggle or slider is not evidence, a pass, a warning or a problem.
+
+[theme]
+base = "light"
+primaryColor = "#1E293B"
+backgroundColor = "#F4F6FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#101828"
+font = "Be Vietnam Pro, Inter, sans-serif"
+headingFont = "Noto Serif, Georgia, serif"
+codeFont = "JetBrains Mono, monospace"
+baseRadius = "medium"
+borderColor = "#E3E8F0"
+linkColor = "#4F46E5"
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+
+[browser]
+# No usage statistics leave the machine.
+gatherUsageStats = false
+
+[server]
+fileWatcherType = "auto"
