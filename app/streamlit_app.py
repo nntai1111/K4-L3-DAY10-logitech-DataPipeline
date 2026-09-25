@@ -68,8 +68,9 @@ with st.sidebar:
         key="collection",
         help="Hỏi cùng một câu trên dữ liệu sạch, dữ liệu bẩn và dữ liệu đã sửa để thấy silent failure.",
     ) or "repaired"
-    use_agent = st.toggle("Dùng agent (LLM)", value=llm_ok, disabled=not llm_ok, key="use_agent")
-    st.caption(f"LLM: {llm_note}" if llm_ok else f"LLM tắt: {llm_note}. Trả lời bằng chế độ trích xuất.")
+    # The assistant always answers with the LLM agent. Extractive answers appear only as a
+    # labelled fallback when the LLM is missing or errors, so the page never goes blank.
+    st.caption(f"Agent LLM: {llm_note}" if llm_ok else f"LLM chưa sẵn sàng ({llm_note}). Tạm trả lời bằng trích xuất.")
     if st.button("Xóa hội thoại", icon=":material/restart_alt:", use_container_width=True):
         st.session_state.turns = []
     st.divider()
@@ -119,7 +120,7 @@ with research_tab:
         if prompt:
             index = get_index(collection)
             with st.spinner("Đang tìm trong kho bài báo..."):
-                if use_agent and llm_ok:
+                if llm_ok:
                     try:
                         answer = ask_agent(get_agent(collection), index, prompt)
                     except Exception as error:  # quota, network, provider errors
