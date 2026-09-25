@@ -55,7 +55,9 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
 - **Vai trò:** Evaluation & Observability owner.
 - **Công việc chi tiết đã hoàn thành:**
   - `src/evaluation/testset.py`: bộ test cố định 10 câu / 4 loại (`summary`, `authors`, `date`, `categories`), câu hỏi khớp logic trích câu trả lời của `retrieval/qa.py`; tái sử dụng cùng bộ test cho cả 3 trạng thái.
-  - `src/observability/quality.py`: quality gate Great Expectations 1.x (ephemeral context, 4 expectation bắt buộc + 8 check mở rộng) và Freshness SLA (`age_days > 180`, cảnh báo khi > 25%).
+  - `src/observability/quality.py`: quality gate Great Expectations 1.x (ephemeral context, 4 loại expectation bắt buộc gồm 6 expectation + 6 check mở rộng, tổng 12) và Freshness SLA (`age_days > 180`, cảnh báo khi > 25%).
   - `src/observability/reporting.py`: `phase1_report.md` và `corruption_report.md` (bảng 3 trạng thái, phân tích nguyên nhân → hệ quả tự động từ artifact).
 - **Điều học được / Đóng góp chính:**
-  - `[Tự viết]`
+  - Đóng góp chính: ba module trên cho ra test set cố định `data/eval/test_set.json`, các báo cáo quality/freshness trong `data/quality/` và hai báo cáo Markdown trong `data/reports/`. Ở lần chạy nộp, gate pass 12/12 với baseline và repaired, còn với dữ liệu hỏng thì fail 7/12 và freshness chuyển STALE (31.8%), bắt đủ 6/6 kịch bản lỗi. Check `source_papers_present` (đối soát `paper_id` với raw snapshot) là check duy nhất trong gate GX bắt được lỗi mất bài mới nhất.
+  - Điều tôi học được quan trọng nhất là silent failure: pipeline chạy không báo lỗi, metric câu trả lời vẫn có thể xanh trong khi dữ liệu đã sai. Ở trạng thái corrupted, `eval_001` lấy câu trả lời từ sai bài nguồn mà judge vẫn chấm 5/5; chỉ retrieval hit (đo bằng `ground_truth_doc_ids`) và gate mới lộ ra. Vì vậy gate phải chạy trước khi dữ liệu vào vector store.
+  - Hỗ trợ ngoài phạm vi: tự làm một bản pipeline đầy đủ thứ hai (nhánh `feat/viet-pipeline`) để nhóm so sánh khi chọn phần ghép vào main, và một app demo Streamlit trên bản đó (agent trên ChromaDB, tab silent failure, tab observability, nạp bài Crossref mới chỉ sau khi qua gate). Hai phần này không nằm trong code nộp.
