@@ -275,3 +275,50 @@ span[translate="no"][data-testid$="Icon"] {
 }
 .rag-legend__i i { margin-top: .32rem; }
 .rag-legend__i em { grid-column: 2; }
+
+/* Silent failure: a card that went wrong, and the words that differ. */
+.d10-state--bad {
+  border-color: color-mix(in srgb, var(--sig-problem) 38%, var(--rag-border));
+  box-shadow: inset 3px 0 0 var(--sig-problem);
+}
+.d10-cmp__problem {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--sig-problem);
+  margin-top: -.25rem;
+}
+mark.d10-diff {
+  background: var(--rag-fallback-soft);
+  color: var(--sig-problem);
+  border-radius: 3px;
+  padding: 0 .15em;
+  font-weight: 600;
+}
+.d10-scenario-story {
+  font-size: .9rem;
+  color: var(--rag-text-dim);
+  margin: .1rem 0 .7rem;
+  max-width: 72ch;
+}
+
+/* Research sources the answer did not cite. */
+.d10-src--unused { opacity: .55; }
+.d10-unused {
+  font-family: var(--rag-mono);
+  font-size: .68rem;
+  color: var(--rag-muted);
+  border: 1px solid var(--rag-border);
+  border-radius: 999px;
+  padding: .02rem .45rem;
+}
+
+.d10-cmp__note { font-size: .76rem; color: var(--rag-muted); margin-top: -.25rem; }
+
+/* The kit pins the second column of a row (the research sources panel). The agent comparison
+   is three equal columns, so none of them may be pinned or height-limited. */
+.st-key-agent-compare [data-testid="stColumn"] > div {
+  position: static;
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}

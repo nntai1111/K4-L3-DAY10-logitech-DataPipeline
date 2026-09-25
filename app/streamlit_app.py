@@ -22,6 +22,7 @@ from evaluation.metrics import _token_f1 as token_f1
 from observability.reporting import SCENARIO_DETECTORS
 from retrieval.qa import answer_question
 from data import load_artifacts
+from demo_cases import build_demo_cases, corpus_topics, duplicate_count
 from research import COLLECTION_FILES, ask_agent, ask_extractive, build_research_agent, llm_available, load_index
 from ui import components as ui
 from ui.theme import COLORS, SIGNAL, inject_css
@@ -139,7 +140,12 @@ with research_tab:
                     ui.banner(f"LLM lỗi, đã chuyển sang chế độ trích xuất: <code>{ui.esc(answer.error)}</code>", kind="warn"),
                     unsafe_allow_html=True,
                 )
-            st.markdown(ui.answer_card(answer.answer, answer.sources, turn_number), unsafe_allow_html=True)
+            if answer.mode == "agent" and not ui.cited_dois(answer.answer):
+                # The agent searched and found nothing it could cite: say so, don't dress it as an answer.
+                best_score = max((source["score"] for source in answer.sources if source.get("score") is not None), default=None)
+                st.markdown(ui.out_of_scope_card(answer.answer, answer.tool_calls, best_score, corpus_topics(settings)), unsafe_allow_html=True)
+            else:
+                st.markdown(ui.answer_card(answer.answer, answer.sources, turn_number), unsafe_allow_html=True)
             mode = "agent + công cụ tìm kiếm" if answer.mode == "agent" else "trích xuất, không LLM"
             st.markdown(
                 f'<div class="d10-mode">Kho {COLLECTION_FILES[turn["collection"]][0]}, {mode}, {len(answer.sources)} bài được đọc.</div>'
@@ -148,11 +154,14 @@ with research_tab:
             )
 
     with source_column:
-        st.markdown(ui.section_label("Nguồn", note="bài báo trợ lý đã đọc cho câu gần nhất"), unsafe_allow_html=True)
+        st.markdown(ui.section_label("Nguồn", note="bài được trích dẫn; bài mờ là đã đọc nhưng không dùng"), unsafe_allow_html=True)
         if st.session_state.turns:
             latest = st.session_state.turns[-1]["answer"]
             if latest.sources:
-                st.markdown(ui.source_list(latest.sources, turn=len(st.session_state.turns)), unsafe_allow_html=True)
+                st.markdown(
+                    ui.source_list(latest.sources, turn=len(st.session_state.turns), cited=ui.cited_dois(latest.answer)),
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown(ui.empty_state("Không có nguồn", "Công cụ tìm kiếm không trả về bài nào cho câu này."), unsafe_allow_html=True)
         else:
@@ -262,24 +271,24 @@ with observability_tab:
 
 # --- silent failure -----------------------------------------------------------------------
 STATE_NAMES = ("baseline", "corrupted", "repaired")
-FREE_QUESTION = "Tự nhập câu hỏi"
+SOURCE_MODES = {"scenario": "Theo kịch bản lỗi", "testset": "Câu hỏi trong test set", "free": "Tự nhập"}
 
 
-def _first_failing_question(test_set: list[dict]) -> int:
-    """Open on a date question the corrupted data gets wrong, so the tab makes its point at once."""
-    corrupted = {answer["id"]: answer for answer in artifacts.states.get("corrupted", {}).get("answers", [])}
-    for position, item in enumerate(test_set):
-        answer = corrupted.get(item["id"])
-        if answer and answer["question_type"] == "date" and answer["token_f1"] < 0.95:
-            return position
-    return 0
+@st.cache_resource(show_spinner="Đang chọn câu hỏi demo cho từng kịch bản...")
+def get_demo_cases():
+    return build_demo_cases(get_settings(), get_index("corrupted"))
 
 
 def _compare_row(name: str, question: str, expected: dict | None, scenarios_by_paper: dict) -> dict:
     index = get_index(name)
     result = answer_question(question, settings=settings, index=index)
     top = index.lookup(result.retrieved_doc_ids[0]) if result.retrieved_doc_ids else None
-    row = {"label": artifacts.states[name]["label"], "answer": result.answer, "source": top["metadata"] if top else None}
+    row = {
+        "label": artifacts.states[name]["label"],
+        "answer": result.answer,
+        "source": top["metadata"] if top else None,
+        "duplicates": duplicate_count(result.retrieved_doc_ids),
+    }
     if expected:
         row["hit"] = any(doc_id in expected["ground_truth_doc_ids"] for doc_id in result.retrieved_doc_ids)
         row["f1"] = token_f1(expected["ground_truth"], result.answer)
@@ -288,56 +297,86 @@ def _compare_row(name: str, question: str, expected: dict | None, scenarios_by_p
     return row
 
 
+def _agent_comparison(question: str) -> None:
+    # Cached resources are resolved here, on Streamlit's own thread; only the three agent calls
+    # run in parallel, which cuts the wait from about 33s to one call's time.
+    agents = {name: (get_agent(name), get_index(name)) for name in STATE_NAMES}
+
+    def ask(name: str):
+        try:
+            return ask_agent(*agents[name], question), None
+        except Exception as error:  # quota, network, provider errors
+            return None, error
+
+    with st.spinner("Agent đang đọc cả ba kho..."), ThreadPoolExecutor(max_workers=3) as pool:
+        replies = dict(zip(STATE_NAMES, pool.map(ask, STATE_NAMES)))
+    baseline_reply = replies["baseline"][0]
+    # Keyed container, so day10.css can undo the kit's sticky second column inside it.
+    for column, name in zip(st.container(key="agent-compare").columns(3), STATE_NAMES):
+        reply, error = replies[name]
+        with column:
+            st.markdown(ui.section_label(artifacts.states[name]["label"]), unsafe_allow_html=True)
+            if error is not None:
+                st.markdown(ui.banner(f"LLM lỗi: <code>{ui.esc(str(error)[:160])}</code>", kind="warn"), unsafe_allow_html=True)
+                continue
+            # Words the clean collection's agent did not say are highlighted.
+            reference = baseline_reply.answer if baseline_reply and name != "baseline" else None
+            turn = 900 + STATE_NAMES.index(name)
+            st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn, compare_to=reference), unsafe_allow_html=True)
+            st.markdown(ui.tool_calls(reply.tool_calls), unsafe_allow_html=True)
+
+
 with failure_tab:
     if not settings.paths.eval_testset.exists() or not artifacts.comparison_ready:
         st.markdown(ui.empty_state("Chưa có dữ liệu so sánh", "Chạy cả hai script pipeline rồi tải lại trang."), unsafe_allow_html=True)
     else:
-        test_set = read_json(settings.paths.eval_testset)
-        options = [f"{item['id']} · {item['question_type']} · {item['question']}" for item in test_set] + [FREE_QUESTION]
         st.markdown(
             ui.section_label("Cùng một câu hỏi, ba kho dữ liệu", note="chỉ truy xuất và trích xuất, không gọi LLM"),
             unsafe_allow_html=True,
         )
-        choice = st.selectbox("Câu hỏi", options, index=_first_failing_question(test_set), label_visibility="collapsed")
+        mode = st.segmented_control(
+            "Nguồn câu hỏi", options=list(SOURCE_MODES), format_func=SOURCE_MODES.get, default="scenario", key="failure_mode",
+            label_visibility="collapsed",
+        ) or "scenario"
+
         expected = None
-        if choice == FREE_QUESTION:
+        question = ""
+        if mode == "scenario":
+            cases = get_demo_cases()
+            by_scenario = {case.scenario: case for case in cases}
+            scenario = st.segmented_control(
+                "Kịch bản", options=list(by_scenario), format_func=lambda key: by_scenario[key].label,
+                default=cases[0].scenario, key="failure_scenario", label_visibility="collapsed",
+            ) or cases[0].scenario
+            case = by_scenario[scenario]
+            st.markdown(f'<p class="d10-scenario-story">{ui.esc(case.story)}</p>', unsafe_allow_html=True)
+            question = case.question
+            expected = {"ground_truth": case.ground_truth, "ground_truth_doc_ids": [case.paper_id], "question_type": case.question_type}
+            st.caption(f"Câu hỏi demo sinh từ corruption log, không dùng để tính điểm: {question}")
+        elif mode == "testset":
+            test_set = read_json(settings.paths.eval_testset)
+            options = [f"{item['id']} · {item['question_type']} · {item['question']}" for item in test_set]
+            choice = st.selectbox("Câu hỏi", options, label_visibility="collapsed")
+            expected = test_set[options.index(choice)]
+            question = expected["question"]
+        else:
             question = st.text_input(
                 "Câu hỏi của bạn",
                 placeholder="Ví dụ: When was 'Freshness SLAs for Real-Time LLM Knowledge Augmentation' published?",
             )
-        else:
-            expected = test_set[options.index(choice)]
-            question = expected["question"]
-            st.markdown(ui.ground_truth_line(expected["question_type"], expected["ground_truth"]), unsafe_allow_html=True)
 
         if question:
+            if expected:
+                st.markdown(ui.ground_truth_line(expected["question_type"], expected["ground_truth"]), unsafe_allow_html=True)
             scenarios_by_paper = artifacts.scenarios_by_paper()
             rows = [_compare_row(name, question, expected, scenarios_by_paper) for name in STATE_NAMES]
-            st.markdown(ui.comparison_cards(rows), unsafe_allow_html=True)
+            st.markdown(
+                ui.comparison_cards(rows, ground_truth=expected["ground_truth"] if expected else None),
+                unsafe_allow_html=True,
+            )
             st.caption(
                 "Không kho nào báo lỗi. Câu trả lời trên dữ liệu bẩn vẫn trôi chảy và tự tin; "
                 "chỉ quality gate ở tab Quan sát dữ liệu thấy dữ liệu có vấn đề."
             )
             if llm_ok and st.button("Hỏi agent trên cả ba kho", icon=":material/forum:", help="Tốn 3 lượt gọi LLM trở lên"):
-                # Cached resources are resolved here, on Streamlit's own thread; only the three
-                # agent calls run in parallel, which cuts the wait from about 33s to one call's time.
-                agents = {name: (get_agent(name), get_index(name)) for name in STATE_NAMES}
-
-                def ask(name: str):
-                    try:
-                        return ask_agent(*agents[name], question), None
-                    except Exception as error:  # quota, network, provider errors
-                        return None, error
-
-                with st.spinner("Agent đang đọc cả ba kho..."), ThreadPoolExecutor(max_workers=3) as pool:
-                    replies = dict(zip(STATE_NAMES, pool.map(ask, STATE_NAMES)))
-                for column, name in zip(st.columns(3), STATE_NAMES):
-                    reply, error = replies[name]
-                    with column:
-                        st.markdown(ui.section_label(artifacts.states[name]["label"]), unsafe_allow_html=True)
-                        if error is not None:
-                            st.markdown(ui.banner(f"LLM lỗi: <code>{ui.esc(str(error)[:160])}</code>", kind="warn"), unsafe_allow_html=True)
-                            continue
-                        turn = 900 + STATE_NAMES.index(name)
-                        st.markdown(ui.answer_card(reply.answer, reply.sources, turn=turn), unsafe_allow_html=True)
-                        st.markdown(ui.tool_calls(reply.tool_calls), unsafe_allow_html=True)
+                _agent_comparison(question)

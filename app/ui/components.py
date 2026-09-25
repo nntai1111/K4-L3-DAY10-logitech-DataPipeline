@@ -128,11 +128,47 @@ def markdown_to_html(text: str) -> str:
     return "".join(out)
 
 
+# --- diff highlighting ------------------------------------------------------------------
+# Sentinels survive escaping and markdown conversion, then become <mark>. Control characters
+# never occur in model output or in the corpus.
+MARK_OPEN, MARK_CLOSE = "\x01", "\x02"
+DOI_PATTERN = re.compile(r"\[((?:\s*10\.\d{4,9}/[^\],\s]+\s*,?)+)\]")
+
+
+def _norm(token: str) -> str:
+    return token.strip(".,;:!?()[]\"'*").lower()
+
+
+def mark_new_words(text: str, reference: str) -> str:
+    """Wrap every word of ``text`` that ``reference`` does not contain in sentinels.
+    DOIs are left alone so citations still link."""
+    known = {_norm(word) for word in reference.split()}
+    marked = []
+    for word in text.split(" "):
+        stripped = _norm(word)
+        if stripped and stripped not in known and "10." not in word:
+            marked.append(f"{MARK_OPEN}{word}{MARK_CLOSE}")
+        else:
+            marked.append(word)
+    return " ".join(marked)
+
+
+def _apply_marks(markup: str) -> str:
+    return markup.replace(MARK_OPEN, '<mark class="d10-diff">').replace(MARK_CLOSE, "</mark>")
+
+
+def cited_dois(answer: str) -> set[str]:
+    return {doi.strip().lower() for match in DOI_PATTERN.finditer(answer) for doi in match.group(1).split(",")}
+
+
 # --- research assistant -----------------------------------------------------------------
-def answer_card(answer: str, sources: Sequence[Mapping[str, Any]], turn: int) -> str:
+def answer_card(answer: str, sources: Sequence[Mapping[str, Any]], turn: int, *, compare_to: str | None = None) -> str:
     """The answer, with every DOI the agent cited turned into a numbered link to its card.
     A cited DOI the agent never retrieved stays visible in the problem colour, because
-    silently dropping an unverifiable citation would hide the failure."""
+    silently dropping an unverifiable citation would hide the failure. With ``compare_to``,
+    words that the reference answer does not contain are highlighted."""
+    if compare_to is not None:
+        answer = mark_new_words(answer, compare_to)
     number_by_doi = {source["paper_id"].lower(): number for number, source in enumerate(sources, start=1)}
 
     def link(doi: str) -> str:
@@ -144,11 +180,28 @@ def answer_card(answer: str, sources: Sequence[Mapping[str, Any]], turn: int) ->
     def replace(match: re.Match[str]) -> str:
         return "".join(link(doi) for doi in match.group(1).split(","))
 
-    body = re.sub(r"\[((?:\s*10\.\d{4,9}/[^\],\s]+\s*,?)+)\]", replace, markdown_to_html(answer))
+    body = _apply_marks(DOI_PATTERN.sub(replace, markdown_to_html(answer)))
     return f'<div class="rag-answer">{body}</div>'
 
 
-def source_list(sources: Sequence[Mapping[str, Any]], *, turn: int) -> str:
+def out_of_scope_card(answer: str, searches: Sequence[str], best_score: float | None, topics: Sequence[str]) -> str:
+    """The agent searched, found nothing relevant and said so: a deliberate outcome, styled
+    like the Day 08 kit's refusal card rather than as an error."""
+    searched = ", ".join(searches) or "không gọi công cụ"
+    score = f"cosine cao nhất {best_score:.3f}" if best_score is not None else "không có kết quả"
+    return (
+        '<div class="rag-refusal">'
+        '<div class="rag-refusal__h"><span class="ic">!</span>Ngoài phạm vi kho bài báo</div>'
+        f'<div class="rag-refusal__b">{markdown_to_html(answer)}</div>'
+        f'<div class="rag-refusal__n">Agent đã tìm ({esc(searched)}) nhưng không bài nào đủ liên quan, {score}. '
+        f"Kho có 24 bài về: {esc(', '.join(topics))}.</div>"
+        "</div>"
+    )
+
+
+def source_list(sources: Sequence[Mapping[str, Any]], *, turn: int, cited: set[str] | None = None) -> str:
+    """Source cards. With ``cited``, papers the answer did not cite are dimmed and labelled,
+    so a paper that was only read is never mistaken for evidence."""
     if not sources:
         return ""
     scores = [source["score"] for source in sources if source.get("score") is not None]
@@ -162,13 +215,15 @@ def source_list(sources: Sequence[Mapping[str, Any]], *, turn: int) -> str:
             f'<div class="rag-src__score"><b>{score:.3f}</b><span>COSINE</span></div>' if score is not None
             else '<div class="rag-src__score"><b>exact</b><span>LOOKUP</span></div>'
         )
+        used = cited is None or source["paper_id"].lower() in cited
+        unused_tag = "" if used else '<span class="d10-unused">đã đọc, không trích dẫn</span>'
         cards.append(
-            f'<div class="rag-src" id="src-{turn}-{number}" style="--rag-accent:{SIGNAL["evidence"]}">'
+            f'<div class="rag-src{"" if used else " d10-src--unused"}" id="src-{turn}-{number}" style="--rag-accent:{SIGNAL["evidence"]}">'
             '<div class="rag-src__head">'
             f'<div class="rag-src__n">{number}</div>'
             '<div class="flex-1 min-w-0">'
             f'<p class="rag-src__title">{esc(source["title"])}</p>'
-            '<div class="rag-src__meta">'
+            f'<div class="rag-src__meta">{unused_tag}'
             f'<span class="rag-src__file">{esc(source.get("authors_joined"))}</span>'
             f'<span class="rag-src__file">{esc(source.get("published"))}</span>'
             f'<a class="rag-src__link" href="{esc(source.get("abs_url"))}" target="_blank" rel="noopener">DOI</a>'
@@ -319,18 +374,39 @@ def question_table(answers_by_state: Mapping[str, Sequence[Mapping[str, Any]]], 
 
 
 # --- silent failure ---------------------------------------------------------------------
-def comparison_cards(rows: Sequence[Mapping[str, Any]]) -> str:
+def comparison_cards(rows: Sequence[Mapping[str, Any]], *, ground_truth: str | None = None) -> str:
     """The same question answered on each collection. Each row holds label, answer, the top
-    source's metadata, hit and f1 (None for a free question) and the scenarios that touched it."""
+    source's metadata, hit and f1 (None for a free question), duplicates in the top-k and the
+    scenarios that touched the paper. A card that went wrong gets the problem stripe, a verdict
+    line, and the words that are not in the ground truth highlighted."""
     cards = []
     for row in rows:
         verdicts = []
         if row.get("hit") is not None:
-            verdicts.append(pill("đúng bài" if row["hit"] else "trượt bài", "pass" if row["hit"] else "problem"))
+            verdicts.append(pill("đúng bài" if row["hit"] else "đọc nhầm bài", "pass" if row["hit"] else "problem"))
         if row.get("f1") is not None:
             verdicts.append(pill(f"F1 {row['f1']:.2f}", "pass" if row["f1"] >= 0.95 else "problem"))
+        duplicates = row.get("duplicates", 0)
         answer = row["answer"].strip()
-        empty = f'<span style="color:{SIGNAL["problem"]}">(trả lời rỗng)</span>'
+        problems = []
+        if row.get("hit") is False:
+            problems.append("Câu trả lời lấy từ một bài khác bài được hỏi.")
+        if not answer:
+            problems.append("Trả lời rỗng, không báo thiếu dữ liệu.")
+        elif row.get("f1") is not None and row["f1"] < 0.95:
+            problems.append("Sai so với đáp án chuẩn, không có cảnh báo nào.")
+        notes = []
+        if duplicates:
+            duplicate_text = f"Top-4 nguồn có {duplicates} bản trùng của cùng một bài."
+            # A duplicate is the headline only when nothing worse happened; otherwise it is a side note.
+            (notes if problems else problems).append(duplicate_text)
+
+        if not answer:
+            answer_html = f'<span style="color:{SIGNAL["problem"]}">(trả lời rỗng)</span>'
+        elif ground_truth is not None:
+            answer_html = _apply_marks(esc(mark_new_words(answer, ground_truth)))
+        else:
+            answer_html = esc(answer)
         source = row.get("source")
         if source:
             source_html = (
@@ -343,11 +419,13 @@ def comparison_cards(rows: Sequence[Mapping[str, Any]]) -> str:
         touched_html = (
             f'<div class="d10-cmp__touch">Bài đúng bị tác động bởi <code>{esc(", ".join(touched))}</code></div>' if touched else ""
         )
+        problem_html = "".join(f'<div class="d10-cmp__problem">{esc(text)}</div>' for text in problems)
+        problem_html += "".join(f'<div class="d10-cmp__note">{esc(text)}</div>' for text in notes)
         cards.append(
-            '<div class="d10-state">'
+            f'<div class="d10-state{" d10-state--bad" if problems else ""}">'
             f'<div class="d10-state__head"><span class="d10-state__name">{esc(row["label"])}</span>'
             f'<span class="d10-cmp__verdicts">{"".join(verdicts)}</span></div>'
-            f'<div class="d10-cmp__answer">{esc(answer) if answer else empty}</div>{source_html}{touched_html}</div>'
+            f'<div class="d10-cmp__answer">{answer_html}</div>{problem_html}{source_html}{touched_html}</div>'
         )
     return f'<div class="d10-states">{"".join(cards)}</div>'
 
