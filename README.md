@@ -7,6 +7,46 @@
 
 ---
 
+## Bài nộp nhóm logitech: cách chạy
+
+Nhóm `logitech` (K4): Nguyễn Như Tài (trưởng nhóm), Lò Văn Long, Hoàng Quốc Việt. Phân công ở [docs/TEAM.md](docs/TEAM.md), kết quả và phân tích ở [report/group_report.md](report/group_report.md). Phần đề bài gốc của lớp bắt đầu từ mục "Bản Đồ Tài Liệu" bên dưới.
+
+**1. Cài đặt** (Python 3.11 đến 3.13):
+
+```bash
+uv sync
+uv pip install -r app/requirements.txt   # chỉ cần cho giao diện Streamlit
+```
+
+Kích hoạt môi trường trước khi chạy: `source .venv/Scripts/activate` (Git Bash trên Windows), `.venv\Scripts\Activate.ps1` (PowerShell) hoặc `source .venv/bin/activate` (macOS/Linux). Cách cài bằng `pip` xem mục "5. THIẾT LẬP MÔI TRƯỜNG" của đề bài bên dưới.
+
+**2. Cấu hình:** tạo `.env` từ `.env.example`. Lần chạy chính thức của bài nộp dùng `LLM_PROVIDER=gemini`, `LLM_MODEL=gemini-3.5-flash-lite` và `GOOGLE_API_KEY`. Không có API key thì đặt `LLM_PROVIDER=mock`: pipeline vẫn chạy hết, LLM judge chuyển sang heuristic dự phòng, còn hit rate và token F1 không đổi.
+
+**3. Chạy** (theo đúng thứ tự; corruption flow đọc `data/results/run_context.json` do pha 1 ghi):
+
+```bash
+python script/run_phase1.py            # baseline        -> data/reports/phase1_report.md
+python script/run_corruption_flow.py   # corrupt, repair -> data/reports/corruption_report.md
+streamlit run app/streamlit_app.py     # trợ lý nghiên cứu, so sánh silent failure, quan sát dữ liệu
+bash script/run_tests.sh               # bộ pytest
+```
+
+Metrics nằm trong `data/results/`, báo cáo GX và freshness trong `data/quality/`, bằng chứng repair idempotent trong `data/results/repair_idempotency.json`.
+
+**4. Biến môi trường tùy chọn:**
+
+| Biến | Tác dụng |
+| --- | --- |
+| `RUN_DATE=YYYY-MM-DD` | Cố định ngày tính `age_days`. Đặt `RUN_DATE=2026-09-25` để tái hiện đúng số liệu trong báo cáo |
+| `REFRESH_SOURCE=1` | Gọi Crossref live thay vì đọc snapshot; lỗi mạng hoặc 429 thì tự quay về snapshot |
+| `REFRESH_TEST_SET=1` | Sinh lại `data/eval/test_set.json` |
+| `RUN_AGENT_DEMO=0` | Bỏ qua 2 câu hỏi demo agent ở pha 1 để tiết kiệm quota |
+| `RUN_RAGAS=1` | Bật thêm Ragas (chậm) |
+
+**5. Lưu ý Windows:** trên máy bật Windows Application Control, DLL của scikit-learn 1.9.0 (bản ghim trong `uv.lock`, kéo vào bởi sentence-transformers) có thể bị chặn khi import. Ghim bản 1.7.2 riêng trong `.venv`, không sửa lockfile của nhóm: `uv pip install --python .venv/Scripts/python.exe scikit-learn==1.7.2`. `uv sync` và `uv run` sẽ cài lại 1.9.0, nên ghim lại sau mỗi lần sync và chạy script bằng `python` trong `.venv` đã kích hoạt.
+
+---
+
 ### 🗺️ Bản Đồ Tài Liệu Cho Buổi Lab (Đọc gì trước, đọc gì sau?):
 Đừng để nhiều file tài liệu làm bạn bị ngợp! Toàn bộ tài liệu chi tiết được quy hoạch gọn gàng trong thư mục [`docs/`](docs/):
 - 🚀 **Bắt tay vào làm ngay:** Mở [Hướng Dẫn Kỹ Thuật Chi Tiết (docs/Guide.md)](docs/Guide.md) và bám sát tiến trình [Các Mốc Thời Gian (docs/CHECKPOINTS.md)](docs/CHECKPOINTS.md).
