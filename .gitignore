@@ -11,3 +11,6 @@ doc_verification_report.md
 .coverage.*
 coverage.xml
 htmlcov/
+
+# Live ingest workspace: papers the research agent fetched on request (never the official artifacts)
+data/live/
