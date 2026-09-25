@@ -26,14 +26,14 @@
 
 Liên hệ với thành viên khác: clean schema là contract cho quality gate và test set (Việt) và cho index, corruption, repair (Long).
 
-Ghi chú về lịch sử commit: code của `crossref.py` và `cleaning.py` trên `main` là bản tích hợp, được đưa lên trong commit `b918ef7` của Long. Commit của tôi là `d0474ec` ("demo"), chứa bản tôi tự làm. Khi merge (`99affeb`), nhóm giữ bản tích hợp nên nội dung commit đó không vào `main` (xem bảng bên dưới). Theo phân công trong `docs/TEAM.md`, hai module này giao cho tôi; báo cáo này giải thích quy tắc, contract và kết quả của chúng trên `main`.
+Ghi chú về lịch sử commit: tôi viết bản đầu của `crossref.py` và `cleaning.py` trong commit `d0474ec` ("demo"). Khi tích hợp, commit `b918ef7` của Long ghi đè hai file này bằng bản tích hợp, và merge `99affeb` giữ bản đó, nên code đang chạy trên `main` là bản tích hợp (xem bảng bên dưới). Theo phân công trong `docs/TEAM.md`, hai module này giao cho tôi; báo cáo này giải thích quy tắc, contract và kết quả của chúng trên `main`.
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
 | Hoạt động | Thành viên/module được hỗ trợ | Kết quả |
 | --- | --- | --- |
 | Trưởng nhóm: tạo repo nộp bài theo bước CP0 trong `README.md`: fork repo gốc của lớp về tài khoản `nntai1111`, đặt tên theo quy ước `K4-L3-DAY10-<TenNhom>-DataPipeline`, mời các thành viên làm collaborator. | Cả nhóm | Repo nộp bài là https://github.com/nntai1111/K4-L3-DAY10-logitech-DataPipeline. Commit `b918ef7` của Long và PR #1 của Việt đều nằm trên `main` của repo này. |
-| Tự làm một bản pipeline đầy đủ trong commit `d0474ec`: parser Crossref, cleaning, luồng corruption có repair dựng lại từ `data/raw/crossref_records.json` qua `build_clean_dataframe`, kèm artifact của lần chạy đó. | Cả nhóm, lúc so sánh và chọn bản để ghép | Nhóm giữ bản tích hợp (merge `99affeb`, "keep integrated pipeline over demo commit"), nên code của bản này không nằm trên `main`. Cách repair của bản này (dựng lại từ raw, không vá dữ liệu hỏng) trùng với cách bản trên `main` dùng (mục 5). Đem bản này so với bản trên `main` cũng cho tôi thấy lỗi ở mục 6. |
+| Tự làm một bản pipeline đầy đủ trong commit `d0474ec`: parser Crossref, cleaning, luồng corruption có repair dựng lại từ `data/raw/crossref_records.json` qua `build_clean_dataframe`, kèm artifact của lần chạy đó. | Cả nhóm, lúc so sánh và chọn bản để ghép | Khi tích hợp, commit `b918ef7` của Long ghi đè code của bản này bằng bản tích hợp (merge `99affeb`, "keep integrated pipeline over demo commit"). Cách repair của bản này (dựng lại từ raw, không vá dữ liệu hỏng) trùng với cách bản trên `main` dùng (mục 5). Đem bản này so với bản trên `main` cũng cho tôi thấy lỗi ở mục 6. |
 
 ## 3. Kết quả theo vai trò
 
