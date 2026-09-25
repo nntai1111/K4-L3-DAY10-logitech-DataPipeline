@@ -27,7 +27,7 @@ Kích hoạt môi trường trước khi chạy: `source .venv/Scripts/activate`
 ```bash
 python script/run_phase1.py            # baseline        -> data/reports/phase1_report.md
 python script/run_corruption_flow.py   # corrupt, repair -> data/reports/corruption_report.md
-streamlit run app/streamlit_app.py     # trợ lý nghiên cứu, so sánh silent failure, quan sát dữ liệu
+streamlit run app/streamlit_app.py     # giao diện demo 4 tab, xem mục 6 và docs/DEMO.md
 bash script/run_tests.sh               # bộ pytest
 ```
 
@@ -38,13 +38,42 @@ Metrics nằm trong `data/results/`, báo cáo GX và freshness trong `data/qual
 | Biến | Tác dụng |
 | --- | --- |
 | `RUN_DATE=YYYY-MM-DD` | Cố định ngày tính `age_days`. Đặt `RUN_DATE=2026-09-25` để tái hiện đúng số liệu trong báo cáo |
-| `REFRESH_SOURCE=1` | Gọi Crossref live thay vì đọc snapshot; lỗi mạng hoặc 429 thì tự quay về snapshot |
-| `CROSSREF_MAILTO=email` | Gửi email liên hệ kèm mỗi lần gọi Crossref live để vào "polite pool" (giới hạn tốc độ cao hơn). Không có thì vẫn gọi được, chỉ chậm hơn khi bị giới hạn |
+| `REFRESH_SOURCE=1` | Gọi Crossref live thay vì đọc snapshot; lỗi mạng hoặc 429 thì tự quay về snapshot. Chỉ áp dụng cho hai script pipeline; kho Live của app không bao giờ quay về snapshot (mục 7) |
+| `CROSSREF_MAILTO=email` | Gửi email liên hệ kèm mỗi lần gọi Crossref live để vào "polite pool" (giới hạn tốc độ cao hơn). Dùng cho cả `REFRESH_SOURCE=1` lẫn việc nạp bài vào kho Live. Không có thì vẫn gọi được, chỉ chậm hơn khi bị giới hạn |
 | `REFRESH_TEST_SET=1` | Sinh lại `data/eval/test_set.json` |
 | `RUN_AGENT_DEMO=0` | Bỏ qua 2 câu hỏi demo agent ở pha 1 để tiết kiệm quota |
 | `RUN_RAGAS=1` | Bật thêm Ragas (chậm) |
 
 **5. Lưu ý Windows:** trên máy bật Windows Application Control, DLL của scikit-learn 1.9.0 (bản ghim trong `uv.lock`, kéo vào bởi sentence-transformers) có thể bị chặn khi import. Ghim bản 1.7.2 riêng trong `.venv`, không sửa lockfile của nhóm: `uv pip install --python .venv/Scripts/python.exe scikit-learn==1.7.2`. `uv sync` và `uv run` sẽ cài lại 1.9.0, nên ghim lại sau mỗi lần sync và chạy script bằng `python` trong `.venv` đã kích hoạt.
+
+**6. Ứng dụng demo** (`streamlit run app/streamlit_app.py`; kịch bản trình bày 5 đến 7 phút ở [docs/DEMO.md](docs/DEMO.md)):
+
+App chỉ đọc kết quả mà hai script ở bước 3 đã ghi, không tự chạy lại pipeline, nên phải chạy hai script trước. Thanh bên chọn kho mà trợ lý dùng: Repaired (mặc định), Baseline, Corrupted hoặc Live.
+
+| Tab | Làm gì | Chứng minh điều gì |
+| --- | --- | --- |
+| Trợ lý nghiên cứu | Một agent tự chọn công cụ, đọc kết quả rồi quyết định gọi tiếp hay trả lời (vòng lặp ReAct, `create_agent` của LangChain). Bốn công cụ: tìm theo nghĩa, tra đúng một bài theo DOI hoặc tên, lọc theo tác giả (bỏ qua hoa thường và dấu, "Nguyen" khớp "Nguyễn"), lọc theo khoảng ngày. Dưới mỗi câu trả lời là các bước agent đã đi: công cụ nào, hỏi gì, nhận về mấy bài. Mỗi ý có DOI trích dẫn trỏ tới bài ở khung Nguồn; bài đã đọc mà không trích thì bị làm mờ, DOI trích mà công cụ không trả về thì hiện màu lỗi. Tìm mà không có bài nào để trích thì hiện thẻ "Ngoài phạm vi kho bài báo" | Câu trả lời chỉ lấy từ kho đã index và truy ngược được về từng bài. Tên và ngày được lọc chính xác trên metadata, không nhờ độ giống nghĩa của embedding |
+| So sánh hai kho | Một yêu cầu tự do gửi song song tới hai kho bất kỳ, mỗi kho một agent riêng. Chỉ agent của kho Live có công cụ nạp bài mới | Cùng một câu, kho có dữ liệu mới trả lời được, kho kia nói là không có |
+| Silent failure | Mỗi kịch bản tiêm lỗi có một câu hỏi demo riêng, chọn tự động từ corruption log và không dùng để tính điểm. Ba thẻ Baseline, Corrupted, Repaired trả lời cùng câu bằng truy xuất và trích xuất (không gọi LLM), đặt cạnh đáp án chuẩn. Nút "Hỏi agent trên cả ba kho" hỏi thêm agent trên cả ba, đánh dấu những từ khác với kho sạch | Kho bẩn vẫn trả lời trôi chảy, không báo lỗi gì; chỉ quality gate thấy dữ liệu có vấn đề |
+| Quan sát dữ liệu | Chỉ số của ba trạng thái (hit rate, token F1, judge), bảng từng expectation Great Expectations theo trạng thái, độ tươi dữ liệu (freshness SLA), bảng sáu kịch bản và expectation nào bắt được, bằng chứng repair idempotent. Phía dưới là thống kê gate trên dữ liệu live: số lần nạp, qua gate, bị chặn, bài lấy về, bài bị cách ly, bài thêm vào kho, lý do chặn, lý do cách ly và nhật ký từng lần | Gate bắt được lỗi nào, bỏ sót lỗi nào (`drop_latest_records` không expectation nào bắt), và nó làm gì với dữ liệu thật từ Crossref |
+
+Không có LLM (`LLM_PROVIDER=mock` hoặc thiếu key): tab 1 trả lời bằng trích xuất và ghi rõ như vậy, tab 2 và nút agent ở tab 3 không dùng được, kho Live không nạp được vì chính agent là bên gọi công cụ nạp. LLM lỗi giữa chừng (hết quota, mất mạng) thì tab 1 hiện dải cảnh báo kèm mã lỗi và chuyển sang trích xuất, không để trang trống.
+
+**7. Kho Live: bài mới đi qua cùng một cổng kiểm tra**
+
+Vấn đề: dữ liệu mới từ Internet là chỗ dữ liệu bẩn dễ lọt vào nhất, và "không lấy được dữ liệu mới" rất dễ bị nhìn nhầm thành "đã cập nhật xong". Kho Live bắt đầu bằng bản sao snapshot sạch (24 bài) và chỉ lớn lên khi người dùng nhờ agent cập nhật một chủ đề, ví dụ "Cập nhật cho tôi các bài mới về vision-language-action model cho robot". Agent gọi công cụ `ingest_new_papers`, công cụ này đưa chủ đề qua `src/pipelines/live_ingest.py`:
+
+1. Lấy tối đa 20 bài có tóm tắt từ Crossref, xuất bản từ mốc ngày người dùng nêu (`published_since`); không nêu thì lấy 180 ngày gần nhất, tính theo ngày thật hôm nay chứ không theo `RUN_DATE`.
+2. Làm sạch bằng đúng hàm của pha 1.
+3. Cách ly dòng bẩn (quarantine): dòng phạm luật được giữ lại kèm lý do, phần còn lại đi tiếp. Luật: thiếu DOI, tiêu đề hoặc nội dung; tóm tắt dưới 30 ký tự; tiêu đề dưới 10 ký tự; từ 3 ký tự rác liền nhau trong nhóm `#@$%^&*~|<>{}[]\` (thường là LaTeX rò rỉ trong tóm tắt). Ngưỡng lấy chung từ `src/observability/quality.py` nên không lệch khỏi bộ GX.
+4. Gate trên lô mới: toàn bộ bộ Great Expectations (có cả điều kiện ít nhất 5 bài) cộng freshness SLA, tức không quá 25% số bài cũ hơn 180 ngày.
+5. Gộp với kho hiện tại, bỏ bài trùng DOI, tính lại tuổi bài theo hôm nay.
+6. Gate lần nữa trên bảng gộp, tức bảng sẽ thật sự phục vụ trợ lý.
+7. Index vào collection `papers-live`; không có bài mới thì không dựng lại.
+
+Bị chặn ở bất kỳ bước nào (không gọi được Crossref, không còn bài dùng được, cả lô bị cách ly, gate lô mới hoặc gate kho gộp fail) thì không bài nào được index và kho giữ nguyên; agent được dặn phải nói lý do. Lỗi mạng hay 429 sau 3 lần thử cũng tính là chặn: khác `REFRESH_SOURCE=1`, kho Live không bao giờ lấy snapshot thế vào, nên phần demo này cần internet. Mỗi lần nạp hiện thành một thẻ từng bước dưới câu trả lời và ghi một file nhật ký.
+
+Mọi thứ kho Live ghi đều nằm dưới `data/live/` (phản hồi thô, báo cáo chất lượng, ChromaDB riêng, nhật ký `ingest_log/`), thư mục này có trong `.gitignore`. Dữ liệu chính thức trong `data/raw`, `data/clean`, `data/quality` và `data/chroma` không bị động tới. Nút "Đưa Live về snapshot" ở thanh bên (chỉ hiện khi đang chọn Live) dựng lại kho từ snapshot; phản hồi thô và nhật ký được giữ lại, nên thống kê gate cộng dồn qua các lần reset.
 
 ---
 
