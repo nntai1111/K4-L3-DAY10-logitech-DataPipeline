@@ -55,5 +55,7 @@ def run_agent_question(agent: Any, question: str) -> str:
     messages = result.get("messages", [])
     if not messages:
         return ""
-    final_message = messages[-1]
-    return getattr(final_message, "content", str(final_message))
+    content = getattr(messages[-1], "content", messages[-1])
+    if isinstance(content, list):  # Gemini 3 returns a list of typed parts, not a string
+        return "".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content).strip()
+    return str(content)
