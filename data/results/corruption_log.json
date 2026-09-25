@@ -1,0 +1,75 @@
+{
+  "seed": 42,
+  "input_rows": 24,
+  "output_rows": 24,
+  "scenario_count": 6,
+  "scenarios": [
+    {
+      "scenario": "drop_latest_records",
+      "description": "B\u1ecf 4 b\u00e0i xu\u1ea5t b\u1ea3n g\u1ea7n nh\u1ea5t (m\u1ea5t d\u1eef li\u1ec7u t\u01b0\u01a1i).",
+      "rows_affected": 4,
+      "paper_ids": [
+        "10.1145/3637528.3671812",
+        "10.1145/3637528.3671808",
+        "10.1145/3637528.3671804",
+        "10.1145/3637528.3671807"
+      ]
+    },
+    {
+      "scenario": "blank_summary",
+      "description": "X\u00f3a tr\u1eafng summary th\u00e0nh chu\u1ed7i r\u1ed7ng (b\u1ed9 c\u00e0o tr\u1ea3 v\u1ec1 r\u1ed7ng).",
+      "rows_affected": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671824",
+        "10.1145/3637528.3671809",
+        "10.1145/3637528.3671819"
+      ]
+    },
+    {
+      "scenario": "inject_text_noise",
+      "description": "Ch\u00e8n m\u1ed9t c\u1ee5m k\u00fd t\u1ef1 r\u00e1c sau m\u1ed7i 3 t\u1eeb c\u1ee7a summary.",
+      "rows_affected": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671806",
+        "10.1145/3637528.3671814",
+        "10.1145/3637528.3671818"
+      ]
+    },
+    {
+      "scenario": "truncate_title",
+      "description": "C\u1eaft ti\u00eau \u0111\u1ec1 c\u00f2n 7 k\u00fd t\u1ef1 \u0111\u1ea7u.",
+      "rows_affected": 3,
+      "paper_ids": [
+        "10.1145/3637528.3671820",
+        "10.1145/3637528.3671823",
+        "10.1145/3637528.3671810"
+      ]
+    },
+    {
+      "scenario": "stale_date",
+      "description": "L\u00f9i ng\u00e0y xu\u1ea5t b\u1ea3n 365 ng\u00e0y, t\u00ednh l\u1ea1i age_days.",
+      "rows_affected": 8,
+      "paper_ids": [
+        "10.1145/3637528.3671817",
+        "10.1145/3637528.3671822",
+        "10.1145/3637528.3671815",
+        "10.1145/3637528.3671802",
+        "10.1145/3637528.3671816",
+        "10.1145/3637528.3671803",
+        "10.1145/3637528.3671821",
+        "10.1145/3637528.3671811"
+      ]
+    },
+    {
+      "scenario": "duplicate_rows",
+      "description": "Nh\u00e2n b\u1ea3n 4 d\u00f2ng, tr\u00f9ng paper_id.",
+      "rows_affected": 4,
+      "paper_ids": [
+        "10.1145/3637528.3671803",
+        "10.1145/3637528.3671805",
+        "10.1145/3637528.3671811",
+        "10.1145/3637528.3671817"
+      ]
+    }
+  ]
+}

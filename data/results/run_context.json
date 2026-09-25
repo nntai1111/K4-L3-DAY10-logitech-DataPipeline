@@ -1,0 +1,12 @@
+{
+  "run_date": "2026-09-25",
+  "generated_at": "2026-09-25T08:39:34+00:00",
+  "source_mode": "snapshot",
+  "raw_records": 24,
+  "clean_rows": 24,
+  "baseline_sha256": "18f784380c172a51b49d6c79254bcb5b7c0a871dd27c92876a256b07134d7d84",
+  "test_set_sha256": "4f224de9590c82b77111ccd5265fd3645d20e1ab6ca10eca4985572b7e44c494",
+  "test_set_size": 10,
+  "llm_provider": "gemini",
+  "llm_model": "gemini-3.5-flash-lite"
+}

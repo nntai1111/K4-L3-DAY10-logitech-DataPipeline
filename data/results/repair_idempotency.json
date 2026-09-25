@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-09-25T08:42:26+00:00",
+  "source": "data/raw/crossref_records.json",
+  "run_date": "2026-09-25",
+  "collection": "papers-repaired",
+  "auto_triggered": true,
+  "baseline_sha256": "18f784380c172a51b49d6c79254bcb5b7c0a871dd27c92876a256b07134d7d84",
+  "repaired_sha256": "18f784380c172a51b49d6c79254bcb5b7c0a871dd27c92876a256b07134d7d84",
+  "repaired_matches_baseline": true,
+  "previous_repaired_sha256": "18f784380c172a51b49d6c79254bcb5b7c0a871dd27c92876a256b07134d7d84",
+  "matches_previous_run": true
+}
