@@ -54,7 +54,7 @@ Phân công theo mẫu nhóm 3 thành viên trong `report/README.md` (mục 5).
 - **Điều học được / Đóng góp chính:**
   - Đóng góp chính: phần nạp và làm sạch dữ liệu mà mọi bước sau dùng chung, gồm 24 record trong `data/raw/crossref_records.json` (manifest `mode: snapshot`, SHA-256 raw `d968be68…`) và bảng sạch `data/clean/papers_clean.*` 24 dòng, 16 cột. Repair dựng lại từ raw qua cùng `build_clean_dataframe`; ở lần chạy nộp, fingerprint của hai lần repair trùng baseline (`a9364c4a…`) và file repaired giống từng byte file baseline.
   - Điều tôi học được quan trọng nhất: ở tầng cleaning, điền giá trị mặc định cho trường bắt buộc là tự tạo ra silent failure. Bản tôi tự làm (commit `d0474ec`) gán `published = 2026-01-01` hoặc `age_days = 0` cho bản ghi có ngày thiếu hay sai, nên bản ghi lỗi trông như bài mới nhất và regex ngày của gate vẫn cho qua. Bản trên main bỏ bản ghi đó và đếm lại. Snapshot 24 bài quá sạch để lộ lỗi này; chỉ test với payload bẩn mới thấy.
-  - Trưởng nhóm: tạo repo nộp bài (fork về tài khoản `nntai1111`) và mời các thành viên. Bản pipeline tôi tự làm trong `d0474ec` được nhóm dùng để so sánh; khi ghép (merge `99affeb`) nhóm giữ bản tích hợp, nên code của bản đó không nằm trên main.
+  - Trưởng nhóm: tạo repo nộp bài (fork về tài khoản `nntai1111`) và mời các thành viên. Tôi viết bản đầu của `crossref.py` và `cleaning.py` (cùng cả pipeline) trong `d0474ec`; khi tích hợp, commit `b918ef7` của Long ghi đè bản này bằng bản tích hợp (merge `99affeb`).
 
 ### ## HoangQuocViet-2A202602563
 - **Vai trò:** Evaluation & Observability owner.
