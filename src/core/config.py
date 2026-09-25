@@ -74,6 +74,8 @@ class Settings:
     refresh_test_set: bool
     run_date: str | None
     paths: Paths
+    # Contact email for Crossref's "polite pool" (better rate limits); read from CROSSREF_MAILTO.
+    crossref_mailto: str | None = None
 
 
 def load_settings(project_dir: Path | None = None) -> Settings:
@@ -146,6 +148,7 @@ def load_settings(project_dir: Path | None = None) -> Settings:
         refresh_test_set=os.getenv("REFRESH_TEST_SET", "").lower() in {"1", "true", "yes"},
         run_date=os.getenv("RUN_DATE") or None,
         paths=paths,
+        crossref_mailto=os.getenv("CROSSREF_MAILTO") or None,
     )
 
 

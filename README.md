@@ -39,6 +39,7 @@ Metrics nằm trong `data/results/`, báo cáo GX và freshness trong `data/qual
 | --- | --- |
 | `RUN_DATE=YYYY-MM-DD` | Cố định ngày tính `age_days`. Đặt `RUN_DATE=2026-09-25` để tái hiện đúng số liệu trong báo cáo |
 | `REFRESH_SOURCE=1` | Gọi Crossref live thay vì đọc snapshot; lỗi mạng hoặc 429 thì tự quay về snapshot |
+| `CROSSREF_MAILTO=email` | Gửi email liên hệ kèm mỗi lần gọi Crossref live để vào "polite pool" (giới hạn tốc độ cao hơn). Không có thì vẫn gọi được, chỉ chậm hơn khi bị giới hạn |
 | `REFRESH_TEST_SET=1` | Sinh lại `data/eval/test_set.json` |
 | `RUN_AGENT_DEMO=0` | Bỏ qua 2 câu hỏi demo agent ở pha 1 để tiết kiệm quota |
 | `RUN_RAGAS=1` | Bật thêm Ragas (chậm) |

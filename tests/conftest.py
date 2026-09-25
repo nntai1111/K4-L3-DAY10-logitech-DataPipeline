@@ -27,6 +27,7 @@ MINILM_CACHE_NAME = "models--sentence-transformers--all-MiniLM-L6-v2"
 # developer's shell (REFRESH_SOURCE=1, a real API key, ...) cannot change what a test observes.
 PIPELINE_ENV_VARS = (
     "REFRESH_SOURCE",
+    "CROSSREF_MAILTO",
     "REFRESH_TEST_SET",
     "RUN_DATE",
     "RUN_RAGAS",

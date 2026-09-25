@@ -338,3 +338,26 @@ def test_live_fetch_raises_after_exhausting_retries_without_http_error(settings,
     monkeypatch.setattr(crossref.time, "sleep", lambda _seconds: None)
     with pytest.raises(RuntimeError, match="exhausted"):
         crossref._fetch_live_payload(settings)
+
+
+def test_live_fetch_names_the_contact_when_mailto_is_set(settings, monkeypatch):
+    calls = []
+
+    def fake_get(url, params, headers, timeout):
+        calls.append({"params": params, "headers": headers})
+        return FakeResponse(200, _payload(_item(DOI="10.1000/polite")))
+
+    monkeypatch.setattr(crossref.requests, "get", fake_get)
+    crossref._fetch_live_payload(replace(settings, crossref_mailto="team@example.org"))
+
+    assert calls[0]["params"]["mailto"] == "team@example.org"
+    assert calls[0]["headers"]["User-Agent"].endswith("(mailto:team@example.org)")
+
+
+def test_crossref_mailto_env_is_read(project_dir, monkeypatch):
+    from core.config import load_settings
+
+    monkeypatch.setenv("CROSSREF_MAILTO", "team@example.org")
+    assert load_settings(project_dir).crossref_mailto == "team@example.org"
+    monkeypatch.setenv("CROSSREF_MAILTO", "")
+    assert load_settings(project_dir).crossref_mailto is None

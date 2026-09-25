@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 CROSSREF_WORKS_URL = "https://api.crossref.org/works"
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 3
+USER_AGENT = "K4-L3-Day10-DataPipeline-Lab/0.1"
 DOI_PREFIXES = ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:")
 DATE_FIELDS_BY_PRIORITY = ("published", "published-print", "published-online", "issued", "created")
 MARKUP_TAG = re.compile(r"<[^>]+>")
@@ -128,7 +129,11 @@ def _fetch_live_payload(settings: Settings) -> dict:
         "filter": settings.source_filter,
         "rows": settings.max_results,
     }
-    headers = {"User-Agent": "K4-L3-Day10-DataPipeline-Lab/0.1"}
+    headers = {"User-Agent": USER_AGENT}
+    if settings.crossref_mailto:
+        # Crossref routes requests that name a contact to its "polite pool", which has higher rate limits.
+        params["mailto"] = settings.crossref_mailto
+        headers["User-Agent"] = f"{USER_AGENT} (mailto:{settings.crossref_mailto})"
     for attempt in range(1, MAX_ATTEMPTS + 1):
         response = requests.get(CROSSREF_WORKS_URL, params=params, headers=headers, timeout=30)
         if response.status_code == 200:
